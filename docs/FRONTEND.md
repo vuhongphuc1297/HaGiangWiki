@@ -1,4 +1,4 @@
-# HaGiangWiki — Giao diện bước 1.4
+# HaGiangWiki — Giao diện mobile bước 1.4 và 2.2
 
 ## Chạy và thử luồng hai người
 
@@ -19,6 +19,20 @@ Mở http://localhost:5173. Trang chủ gọi `/api/auth/me`; khách chưa có p
 
 Cookie HttpOnly xác định người dùng; không lưu token phiên hoặc token mời trong localStorage. Chỉ ID chuyến đã chọn theo user được lưu để mở lại đúng chuyến khi tải trang. Sau khi người kia chỉnh sửa, tải lại trang để nhận dữ liệu mới; chưa có realtime hay đồng bộ ngoại tuyến.
 
+## Sửa, xóa, đổi thứ tự và chuyển ngày (Bước 2.2)
+
+- Mỗi thẻ trên timeline có nút **Lên/Xuống** ở góc phải và **Sửa/Xóa** ở cuối thẻ. Nút Lên của điểm đầu, Xuống của điểm cuối bị vô hiệu hóa. Số thứ tự 01, 02, 03 được tính lại theo vị trí hiển thị.
+- **Sửa** mở bottom sheet điền sẵn tên, loại, ngày/kho tạm, giờ đến/rời đi, dự toán, ghi chú và GPS. Giữ loại tùy chỉnh hoặc chưa chọn của dữ liệu hiện có. Để xóa GPS, để trống cả vĩ độ và kinh độ; tọa độ 0 vẫn là giá trị hợp lệ. Các trường chuyển thành một cột dưới 360px để điều khiển giờ không bị cắt.
+- Lưu gửi PATCH kèm version và Idempotency-Key; thành công tải lại Trip, đóng sheet và chọn ngày đích (hoặc Kho tạm). Xóa gửi DELETE với `{ version }`, có hộp xác nhận, Hủy và nút đỏ **Xóa địa điểm**. Sau khi xóa, tải lại danh sách đã được backend dồn thứ tự. Chi tiết hợp đồng API nằm ở [API_STOPS.md](API_STOPS.md).
+- Lên/Xuống tráo hai điểm ngay trên màn hình rồi gửi toàn bộ `stopIds` của ngày đến API reorder. Trong lúc chờ, khóa các thao tác trên thẻ, chuyển ngày, thêm điểm và cài đặt; hiển thị spinner và trạng thái đang lưu. Response server cập nhật các version trước khi tải lại toàn bộ Trip. Request bị từ chối sẽ khôi phục thứ tự cũ và hiện nút tải dữ liệu mới.
+- Cùng thao tác được retry với cùng Idempotency-Key khi chưa biết kết quả; thao tác mới sau lần lưu thành công dùng key mới. Form đang gửi không nhận thêm lần bấm hoặc đóng sheet.
+- Lỗi 409 khi sửa/xóa/xếp ngày giữ modal và cho phép **Tải lại dữ liệu mới**. Lưu/xóa bị khóa cho đến khi tải lại; form sửa vẫn giữ bản nháp trước khi người dùng chọn tải. Khi version thay đổi, form được điền lại bằng dữ liệu mới. Nếu điểm đã bị xóa, hiển thị thông báo điểm không còn trong chuyến đi.
+- Kho tạm có Sửa/Xóa và giữ nút **Xếp vào ngày**. Các nút sửa/xóa/di chuyển của lịch trình mẫu mở lời nhắc tạo chuyến đi riêng, không gửi request ghi dữ liệu mẫu.
+
+Nghiệm thu với `npm run dev`, Chromium tại 390×844, 320×844 và 1440×900: sửa giờ/ghi chú/dự toán/GPS và F5; Lên/Xuống ba điểm và F5; Hủy/xác nhận xóa, dồn số thứ tự; chuyển ngày → kho → xếp lại; chỉnh sửa/xóa trong kho; lỗi nhập liệu → sửa lỗi; hai tab tạo 409 → tải bản mới; reorder bị từ chối → rollback → tải lại; Escape hoàn trả focus. Trạng thái optimistic/pending được kiểm tra khi giữ khóa tạm riêng chuyến QA, không làm chậm API của các chuyến khác. Đây là kiểm tra trình duyệt theo kích thước, chưa phải kiểm tra trên điện thoại vật lý hoặc đo FPS.
+
+Ảnh và receipt SHA-256 của bước này nằm ở `tmp/stop-interactions-verification/visual-evidence.json`. Dữ liệu QA được tạo riêng; bước duyệt tự động đã chặn việc xóa vĩnh viễn nên chuyến/tài khoản QA được giữ lại để chờ cho phép dọn. Không sửa lịch trình seed. Chạy `npm run typecheck` từ thư mục gốc để kiểm tra toàn monorepo, và `npm run build --workspace frontend` để tạo bản frontend production.
+
 ## Cấu trúc và thiết kế
 
 - React Router quản lý `/`, `/onboarding`, `/join/:token`; URL không tồn tại chuyển về trang chủ. Các tab phụ dùng query `?tab=map|expenses|packing` và hỗ trợ Back của trình duyệt.
@@ -31,7 +45,7 @@ Cookie HttpOnly xác định người dùng; không lưu token phiên hoặc tok
 
 ## Phạm vi và kiểm chứng
 
-Bản đồ, Chi tiêu và Hành lý hiện là màn hình chờ đúng phạm vi bước này. Chưa có service worker/cache ngoại tuyến, API sửa/xóa toàn bộ nội dung điểm dừng, drag-and-drop hoặc realtime. Các thao tác thêm/xếp ngày có kiểm tra quyền ACTIVE, version và Idempotency-Key.
+Bản đồ, Chi tiêu và Hành lý hiện là màn hình chờ. Chưa có service worker/cache ngoại tuyến, kéo thả hoặc realtime. Các thao tác điểm dừng kết nối API Bước 2.1, có kiểm tra quyền ACTIVE, version cho sửa/xóa/chuyển ngày và Idempotency-Key cho tất cả thao tác ghi.
 
 Đã thử trên Chromium với viewport 320×844, 390×844 và 1440×900: lịch trình/kho/tìm kiếm, form trống → sửa → gửi thành công, tạo bản sao, thêm điểm, xếp ngày và tải lại giữ dữ liệu; copy lời mời và reset nhãn; người B tham gia/đổi trang; dùng lại mã bị từ chối; đóng sheet bằng Escape trả focus; API ngắt → thông báo lỗi → thử lại phục hồi. Đây là kiểm tra trình duyệt mô phỏng kích thước, chưa kiểm tra thiết bị iOS/Android thật hoặc đo FPS chuyển động.
 

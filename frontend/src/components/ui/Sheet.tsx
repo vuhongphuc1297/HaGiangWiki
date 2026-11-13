@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 
-export function Sheet({ open, title, onClose, children, busy = false }: { open: boolean; title: string; onClose: () => void; children: ReactNode; busy?: boolean }) {
+export function Sheet({ open, title, onClose, children, busy = false, variant = 'sheet', describedBy }: { open: boolean; title: string; onClose: () => void; children: ReactNode; busy?: boolean; variant?: 'sheet' | 'dialog'; describedBy?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const titleId = useId();
@@ -18,9 +18,9 @@ export function Sheet({ open, title, onClose, children, busy = false }: { open: 
     return () => { document.body.style.overflow = previous; if (opener.current?.isConnected) opener.current.focus(); };
   }, [open]);
 
-  return <dialog ref={dialog} className="sheet" aria-labelledby={titleId} onClose={onClose} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }}>
-    <div aria-hidden="true" className="mx-auto mt-3 h-1 w-9 rounded-full bg-border-main" />
-    <header className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-surface px-5 pb-3 pt-2">
+  return <dialog ref={dialog} className={variant === 'dialog' ? 'confirmation-dialog' : 'sheet'} role={variant === 'dialog' ? 'alertdialog' : 'dialog'} aria-labelledby={titleId} aria-describedby={describedBy} aria-busy={busy} onClose={onClose} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }}>
+    {variant === 'sheet' && <div aria-hidden="true" className="mx-auto mt-3 h-1 w-9 rounded-full bg-border-main" />}
+    <header className={`sticky top-0 z-10 flex items-center justify-between gap-2 bg-surface px-5 pb-3 ${variant === 'dialog' ? 'pt-4' : 'pt-2'}`}>
       <h2 id={titleId} className="font-serif text-2xl font-bold leading-tight">{title}</h2>
       <button type="button" className="icon-button -mr-2 shrink-0" disabled={busy} aria-label="Đóng" onClick={onClose}><X aria-hidden="true" className="size-5" /></button>
     </header>

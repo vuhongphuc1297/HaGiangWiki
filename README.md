@@ -105,4 +105,12 @@ package-lock.json
 - Có manifest, PNG icons, Apple touch icon và meta standalone để chuẩn bị PWA. Chưa đăng ký service worker/cache ngoại tuyến.
 - Đã có Prisma 6.19.3 + PostgreSQL với 10 model, migration, singleton client và seed Hà Giang chạy lại được. Health check hiện vẫn kiểm tra HTTP API; không dùng endpoint này làm kiểm tra kết nối database.
 
+## Tài liệu và Quy trình
+
+- [Quy trình Git & GitHub chuẩn](docs/GIT_WORKFLOW.md) — Hướng dẫn phân nhánh, commit, kiểm thử và mở PR cho lập trình viên và AI Assistant.
+- [Hướng dẫn cơ sở dữ liệu](docs/DATABASE.md)
+- [Hướng dẫn API xác thực](docs/API_AUTH.md)
+- [API điểm dừng và cấu hình chuyến đi](docs/API_STOPS.md)
+- [Hướng dẫn giao diện người dùng](docs/FRONTEND.md)
+
 Tài liệu nghiệp vụ và các bản thiết kế hiện có được giữ trong `docs/` và `design/`.
