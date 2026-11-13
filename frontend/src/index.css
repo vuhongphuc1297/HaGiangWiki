@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply m-0 bg-border-main/40 font-sans text-text-main;
+    min-width: 0;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+    touch-action: manipulation;
+  }
+
+  /* 16px controls avoid automatic input zoom on mobile without blocking pinch zoom. */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.state-focus');
+    outline-offset: 4px;
+  }
+
+  ::selection {
+    @apply bg-accent text-surface;
+  }
+}
+
+@layer components {
+  .field {
+    @apply min-h-12 w-full rounded-btn border border-border-main bg-surface px-3 py-3 text-base leading-6 text-text-main placeholder:text-text-muted/70;
+  }
+
+  .field-label {
+    @apply mb-2 block text-sm font-semibold;
+  }
+
+  .icon-button {
+    @apply inline-flex size-11 items-center justify-center rounded-btn text-accent hover:bg-accent-soft disabled:opacity-50;
+  }
+
+  .sheet {
+    position: fixed;
+    inset: auto 0 0;
+    width: min(100%, 420px);
+    max-width: 420px;
+    max-height: 92dvh;
+    margin: 0 auto;
+    padding: 0;
+    border: 0;
+    border-radius: 24px 24px 0 0;
+    background: #FFFEFC;
+    color: #20281F;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sheet::backdrop { background: rgb(32 40 31 / 42%); }
+  .sheet[open] { animation: sheet-enter 180ms ease-out; }
+  .day-tabs { scrollbar-width: none; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+}
+
+@keyframes sheet-enter {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet[open] { animation: none; }
+}

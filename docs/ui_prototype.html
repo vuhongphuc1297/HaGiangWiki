@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HaGiangWiki — UI Concept Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 9999px; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-2 sm:p-6 font-sans antialiased select-none">
+
+  <!-- Desktop Presentation Wrapper -->
+  <div class="flex flex-col lg:flex-row items-center gap-8 max-w-6xl w-full justify-center">
+
+    <!-- Concept Description Panel (Left on large screens) -->
+    <div class="lg:w-80 space-y-5 text-left hidden lg:block">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wide">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        TRAVEL POCKETBOOK CONCEPT
+      </div>
+      <h1 class="text-3xl font-extrabold text-white leading-tight">
+        HaGiangWiki <br/><span class="text-emerald-400 font-serif italic text-2xl font-normal">Sổ tay cho 2 người</span>
+      </h1>
+      <p class="text-slate-400 text-sm leading-relaxed">
+        Giao diện lấy cảm hứng từ màu xanh ngọc bích của <strong class="text-emerald-300 font-medium">Sông Nho Quế</strong> và sắc cam đất của <strong class="text-amber-300 font-medium">tường trình đá Hà Giang</strong>.
+      </p>
+
+      <div class="space-y-3 pt-2 text-xs text-slate-300">
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-lg">📱</div>
+          <div>
+            <div class="font-semibold text-white">Thao tác 1 tay (One-handed)</div>
+            <div class="text-slate-400">Các nút điều hướng và thêm nhanh đều nằm ở nửa dưới màn hình.</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-lg">⚡</div>
+          <div>
+            <div class="font-semibold text-white">Offline-First minh bạch</div>
+            <div class="text-slate-400">Huy hiệu góc hiển thị rõ Đã lưu / Đang lưu, không báo ảo.</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
+          <div class="text-lg">⚖️</div>
+          <div>
+            <div class="font-semibold text-white">Công nợ 2 người trực quan</div>
+            <div class="text-slate-400">Nhìn là biết ngay ai nợ ai bao nhiêu, 1 chạm là quyết toán.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <div class="text-xs text-slate-400 mb-2">Thử nghiệm tương tác:</div>
+        <div class="flex gap-2">
+          <button onclick="toggleNetworkStatus()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-slate-200 transition">
+            📶 Bật / Tắt mạng giả lập
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone Mockup Container -->
+    <div class="relative w-full max-w-[390px] h-[780px] bg-slate-950 rounded-[48px] p-3 shadow-2xl border-4 border-slate-700 shadow-emerald-950/40 flex flex-col overflow-hidden">
+      
+      <!-- Phone Outer Bezel Camera Pill (Dynamic Island) -->
+      <div class="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-50 flex items-center justify-between px-3">
+        <div class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></div>
+        <div class="w-2 h-2 rounded-full bg-emerald-500/80"></div>
+      </div>
+
+      <!-- Phone Inner Screen -->
+      <div class="relative w-full h-full bg-slate-50 text-slate-900 rounded-[38px] flex flex-col overflow-hidden">
+        
+        <!-- Status Bar -->
+        <div class="pt-3 px-6 pb-2 flex justify-between items-center text-xs font-semibold text-slate-700 z-40 bg-white/80 backdrop-blur-md">
+          <span>09:41</span>
+          <div class="flex items-center gap-1.5">
+            <span id="networkPill" class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">
+              <span id="networkDot" class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+              <span id="networkText">Online · Đã lưu</span>
+            </span>
+            <span class="text-slate-600">5G</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        <!-- App Header -->
+        <header class="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between z-30">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h2 class="font-extrabold text-base text-slate-900 tracking-tight">Hà Giang Mùa Hoa 🌾</h2>
+              <span class="text-[11px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-medium">3N2Đ</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500">
+              <span class="inline-flex -space-x-1.5">
+                <span class="w-4 h-4 rounded-full bg-emerald-600 text-white text-[9px] flex items-center justify-center font-bold">A</span>
+                <span class="w-4 h-4 rounded-full bg-amber-600 text-white text-[9px] flex items-center justify-center font-bold">B</span>
+              </span>
+              <span>Tuấn & Linh</span>
+            </div>
+          </div>
+          <button onclick="openInviteModal()" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-medium flex items-center gap-1 transition">
+            <span>+ Mời</span>
+          </button>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="flex-1 overflow-y-auto hide-scrollbar pb-20 bg-slate-50">
+          
+          <!-- TAB 1: LỊCH TRÌNH (ITINERARY) -->
+          <div id="tab-itinerary" class="tab-content p-4 space-y-4">
+            
+            <!-- Quick Weather Pill for Current Day -->
+            <div class="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-900/10">
+              <div class="flex items-center gap-2.5">
+                <span class="text-2xl">⛅</span>
+                <div>
+                  <div class="text-xs font-medium text-emerald-100">Đồng Văn · Hôm nay</div>
+                  <div class="text-sm font-bold">19°C · Mát mẻ, có sương sớm</div>
+                </div>
+              </div>
+              <span class="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Đèo khô ráo</span>
+            </div>
+
+            <!-- Day Selector Tabs (Horizontal Scroll) -->
+            <div class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
+              <button onclick="switchDay(0)" id="day-btn-0" class="day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 transition">
+                Kho tạm <span class="ml-1 text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded-full">1</span>
+              </button>
+              <button onclick="switchDay(1)" id="day-btn-1" class="day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-emerald-600 text-white shadow-sm transition">
+                Ngày 1 · TP - Quản Bạ
+              </button>
+              <button onclick="switchDay(2)" id="day-btn-2" class="day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 transition">
+                Ngày 2 · Mã Pí Lèng
+              </button>
+              <button onclick="switchDay(3)" id="day-btn-3" class="day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 transition">
+                Ngày 3 · Lũng Cú
+              </button>
+            </div>
+
+            <!-- Stops Timeline Container -->
+            <div id="stops-container" class="space-y-3 pt-1">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Add Stop Button -->
+            <button onclick="alert('Mở modal thêm địa điểm mới vào ngày này')" class="w-full py-2.5 rounded-2xl border-2 border-dashed border-emerald-300/80 bg-emerald-50/50 hover:bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center justify-center gap-1.5 transition">
+              <span>+ Thêm địa điểm vào Ngày 1</span>
+            </button>
+          </div>
+
+          <!-- TAB 2: CHI TIÊU & CÔNG NỢ (EXPENSES) -->
+          <div id="tab-expenses" class="tab-content p-4 space-y-4 hidden">
+            
+            <!-- Debt Highlight Hero Card -->
+            <div class="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-3">
+              <div class="flex justify-between items-center text-xs text-slate-500 font-medium">
+                <span>Số dư quyết toán hiện tại</span>
+                <span class="text-emerald-600 font-semibold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-full">3 kiểu chia</span>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <div>
+                  <div class="text-xs text-slate-400">Linh (B) đang nợ Tuấn (A)</div>
+                  <div class="text-2xl font-black text-slate-900 tracking-tight">350.000 <span class="text-sm font-semibold text-slate-500">đ</span></div>
+                </div>
+                <button onclick="openSettleModal()" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-95 transition">
+                  Chuyển trả
+                </button>
+              </div>
+
+              <!-- Mini Stats Breakdown -->
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="bg-slate-50 p-2.5 rounded-xl">
+                  <div class="text-slate-400 text-[11px]">Tuấn (A) đã chi</div>
+                  <div class="font-bold text-slate-800">1.100.000 đ</div>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl">
+                  <div class="text-slate-400 text-[11px]">Linh (B) đã chi</div>
+                  <div class="font-bold text-slate-800">400.000 đ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expense List Header -->
+            <div class="flex justify-between items-center pt-1">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Khoản chi gần nhất</h3>
+              <span class="text-[11px] text-slate-400">4 giao dịch</span>
+            </div>
+
+            <!-- Expense Items -->
+            <div class="space-y-2.5">
+              
+              <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">🍲</div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-900">Thắng dền & Bánh cuốn</div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <span class="text-emerald-600 font-semibold">Tuấn trả</span>
+                      <span>·</span>
+                      <span class="px-1.5 py-0.2 bg-slate-100 rounded text-slate-600">Chia đôi</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-bold text-slate-900">140.000 đ</div>
+                  <div class="text-[10px] text-slate-400">Mỗi người 70k</div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-base">☕</div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-900">Cà phê Đèo Mã Pí Lèng</div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <span class="text-emerald-600 font-semibold">Tuấn trả hộ Linh</span>
+                      <span>·</span>
+                      <span class="px-1.5 py-0.2 bg-purple-50 text-purple-700 rounded">Trả hộ</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-bold text-slate-900">90.000 đ</div>
+                  <div class="text-[10px] text-purple-600 font-medium">Linh nợ 90k</div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base">⛽</div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-900">Đổ xăng xe máy (2 xe)</div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <span class="text-amber-600 font-semibold">Linh trả</span>
+                      <span>·</span>
+                      <span class="px-1.5 py-0.2 bg-slate-100 rounded text-slate-600">Chia đôi</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-bold text-slate-900">160.000 đ</div>
+                  <div class="text-[10px] text-slate-400">Mỗi người 80k</div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-base">🧤</div>
+                  <div>
+                    <div class="text-xs font-bold text-slate-900">Găng tay len (mua riêng)</div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                      <span class="text-amber-600 font-semibold">Linh trả</span>
+                      <span>·</span>
+                      <span class="px-1.5 py-0.2 bg-slate-100 text-slate-500 rounded">Cá nhân</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs font-bold text-slate-500">60.000 đ</div>
+                  <div class="text-[10px] text-slate-400">Không tính nợ</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Quick Add Expense Button -->
+            <button onclick="alert('Mở form thêm chi tiêu')" class="w-full py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10">
+              <span>+ Thêm khoản chi mới</span>
+            </button>
+          </div>
+
+          <!-- TAB 3: BẢN ĐỒ (MAP) -->
+          <div id="tab-map" class="tab-content h-full flex flex-col p-4 space-y-3 hidden">
+            <!-- Simulated Map Canvas -->
+            <div class="relative w-full h-80 bg-emerald-950/90 rounded-3xl overflow-hidden border border-emerald-800 shadow-inner flex flex-col items-center justify-center">
+              
+              <!-- Map Top Filter -->
+              <div class="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
+                <span class="text-[11px] px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-emerald-300 font-medium">
+                  🗺️ Cung đường Ngày 1 (72 km)
+                </span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  GPS chính xác
+                </span>
+              </div>
+
+              <!-- Map decorative roads & peaks -->
+              <div class="absolute inset-0 opacity-30 flex items-center justify-center pointer-events-none">
+                <svg viewBox="0 0 300 200" class="w-full h-full text-emerald-400 stroke-current fill-none stroke-[2] stroke-dasharray-[4,4]">
+                  <path d="M 30,160 Q 90,120 120,130 T 200,70 T 270,40" />
+                </svg>
+              </div>
+
+              <!-- Markers -->
+              <div class="absolute bottom-10 left-12 flex flex-col items-center animate-bounce">
+                <span class="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-lg border-2 border-white">1</span>
+                <span class="text-[10px] text-white bg-black/70 px-1.5 py-0.2 rounded mt-1 whitespace-nowrap">Dốc Bắc Sum</span>
+              </div>
+
+              <div class="absolute top-28 left-36 flex flex-col items-center">
+                <span class="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-lg border-2 border-white">2</span>
+                <span class="text-[10px] text-white bg-black/70 px-1.5 py-0.2 rounded mt-1 whitespace-nowrap">Cổng Trời Quản Bạ</span>
+              </div>
+
+              <div class="absolute top-12 right-12 flex flex-col items-center">
+                <span class="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs flex items-center justify-center shadow-lg border-2 border-white">3</span>
+                <span class="text-[10px] text-white bg-black/70 px-1.5 py-0.2 rounded mt-1 whitespace-nowrap">Dốc Thẩm Mã</span>
+              </div>
+
+              <!-- Switch to Google Maps external -->
+              <div class="absolute bottom-3 right-3 z-10">
+                <button class="px-2.5 py-1 rounded-xl bg-white/90 text-slate-800 text-[11px] font-bold shadow">
+                  Mở bản đồ ngoài ↗
+                </button>
+              </div>
+            </div>
+
+            <!-- Unmapped warning -->
+            <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 flex items-center gap-2.5 text-xs text-amber-800">
+              <span class="text-base">📍</span>
+              <div class="flex-1">
+                <strong>1 địa điểm chưa có GPS:</strong> "Quán Cơm Mẹ Nấu" ở kho tạm.
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: HÀNH LÝ (PACKING) -->
+          <div id="tab-packing" class="tab-content p-4 space-y-4 hidden">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="font-extrabold text-sm text-slate-900">Checklist Hà Giang</h3>
+                <p class="text-xs text-slate-500">Đã chuẩn bị 4/7 món</p>
+              </div>
+              <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-xl">57%</span>
+            </div>
+
+            <!-- Shared items section -->
+            <div class="space-y-2">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Đồ dùng chung</div>
+              
+              <label class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 shadow-sm cursor-pointer">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" checked class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                  <span class="text-xs font-semibold text-slate-800 line-through text-slate-400">Áo mưa cánh dơi + bộ bọc giày</span>
+                </div>
+                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">Tuấn mang</span>
+              </label>
+
+              <label class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 shadow-sm cursor-pointer">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" checked class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                  <span class="text-xs font-semibold text-slate-800 line-through text-slate-400">Túi thuốc y tế (dầu gió, hạ sốt, băng gạc)</span>
+                </div>
+                <span class="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full">Linh mang</span>
+              </label>
+
+              <label class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 shadow-sm cursor-pointer">
+                <div class="flex items-center gap-3">
+                  <input type="checkbox" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                  <span class="text-xs font-semibold text-slate-800">Dây chằng đồ xe máy cao su (4 sợi)</span>
+                </div>
+                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full">Tuấn mang</span>
+              </label>
+            </div>
+          </div>
+
+        </main>
+
+        <!-- Bottom Navigation (Fixed at screen bottom) -->
+        <nav class="absolute bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-100 px-3 py-2 flex justify-around items-center z-40">
+          <button onclick="switchTab('itinerary')" id="nav-itinerary" class="nav-item flex flex-col items-center gap-0.5 text-emerald-600 transition">
+            <span class="text-lg">📅</span>
+            <span class="text-[10px] font-bold">Lịch trình</span>
+          </button>
+          <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-item flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition">
+            <span class="text-lg">💰</span>
+            <span class="text-[10px] font-semibold">Chi tiêu</span>
+          </button>
+          <button onclick="switchTab('map')" id="nav-map" class="nav-item flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition">
+            <span class="text-lg">🗺️</span>
+            <span class="text-[10px] font-semibold">Bản đồ</span>
+          </button>
+          <button onclick="switchTab('packing')" id="nav-packing" class="nav-item flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 transition">
+            <span class="text-lg">🎒</span>
+            <span class="text-[10px] font-semibold">Hành lý</span>
+          </button>
+        </nav>
+
+        <!-- Invite Partner Modal (Hidden by default) -->
+        <div id="inviteModal" class="hidden absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center">
+          <div class="w-full bg-white rounded-t-[32px] p-5 space-y-4 animate-in slide-in-from-bottom duration-200">
+            <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto"></div>
+            <div>
+              <h3 class="font-bold text-base text-slate-900">Mời bạn đồng hành (B)</h3>
+              <p class="text-xs text-slate-500">Gửi liên kết dùng một lần để cùng xếp lịch & ghi tiền.</p>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs font-mono text-slate-700 break-all select-all">
+              https://hagiang.wiki/join/tk_9a8f27c3d1e
+            </div>
+
+            <div class="flex gap-2">
+              <button onclick="copyInviteLink()" id="copyBtn" class="flex-1 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
+                Sao chép liên kết
+              </button>
+              <button onclick="closeInviteModal()" class="px-4 py-3 rounded-2xl bg-slate-100 text-slate-600 font-bold text-xs">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const daysData = {
+      0: [
+        { name: "Quán Cơm Mẹ Nấu", type: "Ăn uống", cost: "120.000 đ", note: "Chưa chốt ngày, gần bến xe TP", time: "--:--", dist: "Chưa có GPS" }
+      ],
+      1: [
+        { name: "Cột Mốc Km 0 (TP Hà Giang)", type: "Check-in", cost: "Miễn phí", note: "Chụp ảnh lưu niệm xuất phát", time: "07:30", dist: "Khởi hành" },
+        { name: "Dốc Bắc Sum", type: "Ngắm cảnh", cost: "Miễn phí", note: "Đoạn dốc ngoằn ngoèo đầu tiên", time: "09:00", dist: "32 km" },
+        { name: "Cổng Trời Quản Bạ & Núi Đôi", type: "Check-in", cost: "Miễn phí", note: "Uống cà phê ngắm thị trấn Tam Sơn", time: "10:30", dist: "18 km" },
+        { name: "Dốc Thẩm Mã", type: "Chụp ảnh", cost: "Miễn phí", note: "Chụp các bé gùi hoa tam giác mạch", time: "14:00", dist: "55 km" }
+      ],
+      2: [
+        { name: "Cột cờ Quốc gia Lũng Cú", type: "Thăm quan", cost: "50.000 đ/vé", note: "Leo 839 bậc đá lên đỉnh cờ", time: "08:30", dist: "26 km" },
+        { name: "Làng cổ Lô Lô Chải", type: "Homestay / Cafe", cost: "Miễn phí", note: "Uống cafe Cực Bắc", time: "11:00", dist: "3.5 km" },
+        { name: "Đèo Mã Pí Lèng", type: "Kỳ quan", cost: "Miễn phí", note: "Điểm ngắm cảnh Panorama", time: "14:30", dist: "38 km" },
+        { name: "Hẻm Tu Sản - Thuyền Sông Nho Quế", type: "Trải nghiệm", cost: "120.000 đ/thuyền", note: "Đi xe ôm xuống bến sông", time: "16:00", dist: "12 km" }
+      ],
+      3: [
+        { name: "Chợ phiên Đồng Văn", type: "Chợ", cost: "Ăn vặt", note: "Chỉ họp sáng Chủ Nhật", time: "07:00", dist: "Trung tâm" },
+        { name: "Dinh Thự Họ Vương (Vua Mèo)", type: "Di tích", cost: "30.000 đ/vé", note: "Kiến trúc đá và gỗ sa mộc độc đáo", time: "09:30", dist: "15 km" }
+      ]
+    };
+
+    let currentDay = 1;
+    let isOnline = true;
+
+    function renderStops(day) {
+      const container = document.getElementById("stops-container");
+      container.innerHTML = "";
+      const stops = daysData[day] || [];
+
+      if (stops.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Chưa có địa điểm nào trong ngày này.</div>`;
+        return;
+      }
+
+      stops.forEach((stop, index) => {
+        const card = document.createElement("div");
+        card.className = "p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm relative space-y-1.5 hover:border-emerald-300 transition";
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
+                ${day === 0 ? "★" : index + 1}
+              </span>
+              <div>
+                <h4 class="font-bold text-xs text-slate-900">${stop.name}</h4>
+                <div class="text-[10px] text-slate-400">${stop.type} · Dự tính: ${stop.cost}</div>
+              </div>
+            </div>
+            <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+              ${stop.time}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-600 pl-8 flex items-center justify-between">
+            <span>📝 ${stop.note}</span>
+            <span class="text-[10px] text-slate-400 font-mono">📍 ${stop.dist}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function switchDay(day) {
+      currentDay = day;
+      document.querySelectorAll(".day-tab").forEach(btn => {
+        btn.className = "day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-white text-slate-600 border border-slate-200 transition";
+      });
+      const activeBtn = document.getElementById(`day-btn-${day}`);
+      if (activeBtn) {
+        activeBtn.className = "day-tab px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap bg-emerald-600 text-white shadow-sm transition";
+      }
+      renderStops(day);
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+      document.querySelectorAll(".nav-item").forEach(btn => {
+        btn.classList.remove("text-emerald-600");
+        btn.classList.add("text-slate-400");
+      });
+
+      const selectedTab = document.getElementById(`tab-${tabId}`);
+      const selectedNav = document.getElementById(`nav-${tabId}`);
+      if (selectedTab && selectedNav) {
+        selectedTab.classList.remove("hidden");
+        selectedNav.classList.remove("text-slate-400");
+        selectedNav.classList.add("text-emerald-600");
+      }
+    }
+
+    function toggleNetworkStatus() {
+      isOnline = !isOnline;
+      const pill = document.getElementById("networkPill");
+      const dot = document.getElementById("networkDot");
+      const text = document.getElementById("networkText");
+
+      if (isOnline) {
+        pill.className = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-600";
+        text.innerText = "Online · Đã lưu";
+      } else {
+        pill.className = "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse";
+        text.innerText = "Offline (Lưu tạm)";
+      }
+    }
+
+    function openInviteModal() {
+      document.getElementById("inviteModal").classList.remove("hidden");
+    }
+
+    function closeInviteModal() {
+      document.getElementById("inviteModal").classList.add("hidden");
+    }
+
+    function copyInviteLink() {
+      const btn = document.getElementById("copyBtn");
+      btn.innerText = "✓ Đã sao chép liên kết!";
+      btn.classList.remove("bg-emerald-600");
+      btn.classList.add("bg-slate-900");
+      setTimeout(() => {
+        closeInviteModal();
+        btn.innerText = "Sao chép liên kết";
+        btn.classList.remove("bg-slate-900");
+        btn.classList.add("bg-emerald-600");
+      }, 1200);
+    }
+
+    function openSettleModal() {
+      alert("Modal Quyết toán: Linh chuyển trả Tuấn 350.000 đ qua QR / Chuyển khoản và ghi nhận giao dịch vào hệ thống.");
+    }
+
+    renderStops(1);
+  </script>
+</body>
+</html>

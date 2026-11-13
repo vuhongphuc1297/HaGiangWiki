@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  displayName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions           Session[]
+  memberships        TripMember[]
+  invitesCreated     TripInvite[]
+  idempotencyRecords IdempotencyRecord[]
+}
+
+model Session {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastUsedAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Trip {
+  id           String   @id @default(cuid())
+  title        String
+  // A calendar date; local arrival/departure times use the trip timezone.
+  startDate    DateTime @db.Date
+  durationDays Int      @default(3)
+  vehicle      String   @default("XE_MAY")
+  budget       BigInt   @default(0)
+  timezone     String   @default("Asia/Ho_Chi_Minh")
+  version      Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  members            TripMember[]
+  invites            TripInvite[]
+  stops              Stop[]
+  expenses           Expense[]
+  transfers          SettlementTransfer[]
+  packingItems       PackingItem[]
+  idempotencyRecords IdempotencyRecord[]
+}
+
+model TripMember {
+  id        String    @id @default(cuid())
+  tripId    String
+  userId    String
+  role      String    @default("MEMBER")
+  nickname  String
+  status    String    @default("ACTIVE")
+  joinedAt  DateTime  @default(now())
+  revokedAt DateTime?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  expenses          Expense[]
+  transfersSent     SettlementTransfer[] @relation("TransferSender")
+  transfersReceived SettlementTransfer[] @relation("TransferRecipient")
+  packingItems      PackingItem[]
+
+  @@unique([tripId, userId])
+  // Composite keys let PostgreSQL enforce same-trip references.
+  @@unique([tripId, id])
+  @@index([tripId])
+  @@index([userId])
+}
+
+model TripInvite {
+  id              String    @id @default(cuid())
+  tripId          String
+  createdByUserId String
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  trip          Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  createdByUser User @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([tokenHash])
+  @@index([tripId])
+  @@index([createdByUserId])
+}
+
+model Stop {
+  id            String    @id @default(cuid())
+  tripId        String
+  name          String
+  category      String?
+  day           Int       @default(0)
+  orderIndex    Int       @default(0)
+  arriveTime    String?
+  leaveTime     String?
+  latitude      Float?
+  longitude     Float?
+  estimatedCost BigInt    @default(0)
+  notes         String?
+  version       Int       @default(1)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([tripId, id])
+  @@index([tripId, day, orderIndex])
+}
+
+model Expense {
+  id             String    @id @default(cuid())
+  tripId         String
+  stopId         String?
+  payerMemberId  String
+  amount         BigInt
+  title          String
+  category       String?
+  splitType      String    @default("EQUAL")
+  idempotencyKey String
+  version        Int       @default(1)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  trip        Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stop        Stop?      @relation(fields: [tripId, stopId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+  payerMember TripMember @relation(fields: [tripId, payerMemberId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tripId, idempotencyKey])
+  @@index([tripId])
+  @@index([tripId, stopId])
+  @@index([tripId, payerMemberId])
+}
+
+model SettlementTransfer {
+  id             String    @id @default(cuid())
+  tripId         String
+  fromMemberId   String
+  toMemberId     String
+  amount         BigInt
+  transferDate   DateTime  @default(now())
+  notes          String?
+  idempotencyKey String
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  trip       Trip       @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  fromMember TripMember @relation("TransferSender", fields: [tripId, fromMemberId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+  toMember   TripMember @relation("TransferRecipient", fields: [tripId, toMemberId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tripId, idempotencyKey])
+  @@index([tripId, fromMemberId])
+  @@index([tripId, toMemberId])
+}
+
+model PackingItem {
+  id                 String   @id @default(cuid())
+  tripId             String
+  title              String
+  isShared           Boolean  @default(false)
+  // Shared-item carrier or personal-item owner (one row per person).
+  assignedToMemberId String?
+  isPacked           Boolean  @default(false)
+  version            Int      @default(1)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  trip             Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  assignedToMember TripMember? @relation(fields: [tripId, assignedToMemberId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([tripId, assignedToMemberId])
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(cuid())
+  tripId         String
+  userId         String
+  key            String
+  requestHash    String
+  responseStatus Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([tripId, key])
+  @@index([userId])
+  @@index([expiresAt])
+}
