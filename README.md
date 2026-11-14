@@ -9,13 +9,14 @@
 - **Tên dự án**: Travel Companion Web App (Phiên bản mẫu: *Hà Giang · Explore the Loop*)
 - **Nền tảng**: Ứng dụng Web (Responsive Web Application dùng trên cả Laptop và Điện thoại)
 - **Quy mô người dùng**: Tối ưu hóa cho nhóm **2 người** (*Tôi* và *Bạn đồng hành*) sử dụng chung mà không cần hệ thống đăng nhập phân quyền phức tạp.
-- **Chi phí vận hành**: $0 \text{ VNĐ}$ (Sử dụng 100% các dịch vụ Cloud Database, Hosting và API dữ liệu thời gian thực miễn phí).
+- **Chi phí vận hành**: (Sử dụng 100% các dịch vụ Cloud Database, Hosting và API dữ liệu thời gian thực miễn phí).
 
 ---
 
 ## 2. Vấn Đề & Giải Pháp (Problem Statement & Solution)
 
 ### 2.1. Vấn đề thực tế khi đi du lịch tự túc
+
 1. **Thông tin địa điểm bị phân mảnh**: Đọc được các bài review quán ăn, điểm ngắm cảnh, homestay trên mạng xã hội nhưng không có nơi lưu tạm có cấu trúc (giờ mở cửa, giá vé, mã đặt chỗ, ghi chú) để sau đó mới xếp vào lịch trình.
 2. **Bản đồ thiếu tính cá nhân hóa**: Các bản đồ số thông thường có quá nhiều chi tiết thừa, trong khi người đi phượt/du lịch thường muốn theo dõi lộ trình trên một sơ đồ vùng hoặc tấm ảnh bản đồ cung đường do chính mình chuẩn bị.
 3. **Bị động trước thời tiết và quãng đường đèo núi**: Không nắm được nhiệt độ, sức gió, độ ẩm theo thời gian thực tại từng điểm dừng và thời gian di chuyển thực tế giữa các chặng.
@@ -23,8 +24,10 @@
 5. **Chuẩn bị hành lý thiếu sót hoặc trùng lặp**: Không phân biệt rõ đồ dùng chung (ai là người phụ trách mang theo) và đồ dùng cá nhân theo số ngày đi cũng như phương tiện di chuyển.
 
 ### 2.2. Giải pháp của sản phẩm
+
 Xây dựng một **All-in-One Travel Web App** giải quyết trọn vẹn 6 nhu cầu trên trong một giao diện duy nhất:
-- **Gom địa điểm trước, xếp lịch sau (Idea Pool $\rightarrow$ Timeline)**: Lưu nhanh mọi địa điểm tâm đắc vào Kho lưu trữ tạm (`day = 0`), sau đó đẩy vào từng ngày và đổi thứ tự điểm dừng linh hoạt.
+
+- **Gom địa điểm trước, xếp lịch sau (Idea Pool -> Timeline)**: Lưu nhanh mọi địa điểm tâm đắc vào Kho lưu trữ tạm (`day = 0`), sau đó đẩy vào từng ngày và đổi thứ tự điểm dừng linh hoạt.
 - **Bản đồ lộ trình kép (Wiki Loop Map & Custom Image Map)**: Hiển thị các nhãn đánh số thứ tự (`01`, `02`, `03`...) và vạch nối tuyến đường theo màu sắc từng ngày trực tiếp trên bản đồ phân vùng hoặc trên tấm ảnh bản đồ do người dùng tải lên.
 - **Đồng bộ Thời tiết & Đường đi Realtime**: Chỉ lấy dữ liệu từ các nguồn khí tượng và bản đồ uy tín (**Open-Meteo API** và **OSRM / OpenStreetMap**).
 - **Ghi chi tiêu ngay tại điểm dừng & Tự động quyết toán 2 người**: Đối chiếu trực tiếp *Dự toán* và *Thực chi* tại mỗi điểm dừng; tự động tính số tiền ròng cần chuyển trả giữa 2 người vào cuối chuyến.
@@ -37,17 +40,19 @@ Xây dựng một **All-in-One Travel Web App** giải quyết trọn vẹn 6 nh
 Ứng dụng được chia thành **2 chế độ trang chính** chuyển đổi nhanh trên thanh điều hướng:
 
 ### 3.1. Trang chính: `Explore Hà Giang` (Luồng cuộn dọc 3 tầng)
+
 1. **Tầng 1 — Hero Banner & Trạm Thời Tiết Realtime (Đầu trang)**:
    - Hiển thị khung cảnh đặc trưng của chuyến đi, tổng số ngày, phương tiện di chuyển chính và tổng ngân sách.
-   - Thanh quan trắc thời tiết thời gian thực tại 5 khu vực trọng điểm trên toàn tuyến (nhiệt độ $^\circ\text{C}$, sức gió $\text{km/h}$, độ cao và trạng thái thời tiết).
+   - Thanh quan trắc thời tiết thời gian thực tại 5 khu vực trọng điểm trên toàn tuyến (nhiệt độ, sức gió, độ cao và trạng thái thời tiết).
 2. **Tầng 2 — Bản Đồ Lộ Trình & Lịch Trình Tổng (Giữa trang - Split-Screen)**:
-   - **Cột trái ($35\%$ màn hình)**: Thanh tìm kiếm, bộ lọc theo Ngày / Khu vực (`Zone`) và danh sách thẻ địa điểm rút gọn.
-   - **Cột phải ($65\%$ màn hình)**: Bản đồ `The big picture` hiển thị tuyến đường nối theo kế hoạch, các nhãn ghim đánh số, hộp thông tin nhanh (Inspector Card) và cụm nút thao tác nổi (`Toàn tuyến`, `Drop a pin`, `Tải ảnh bản đồ riêng`).
+   - **Cột trái (35% màn hình)**: Thanh tìm kiếm, bộ lọc theo Ngày / Khu vực (`Zone`) và danh sách thẻ địa điểm rút gọn.
+   - **Cột phải (65% màn hình)**: Bản đồ `The big picture` hiển thị tuyến đường nối theo kế hoạch, các nhãn ghim đánh số, hộp thông tin nhanh (Inspector Card) và cụm nút thao tác nổi (`Toàn tuyến`, `Drop a pin`, `Tải ảnh bản đồ riêng`).
 3. **Tầng 3 — Lịch Trình Chi Tiết, Quãng Đường & Sổ Chi Tiêu (Cuối trang)**:
    - Hiển thị chi tiết từng ngày theo khung giờ (`07:00 - 08:45`...), giờ mở cửa, thông tin đặt chỗ, ghi chú kinh nghiệm và quãng đường/thời gian di chuyển tới điểm tiếp theo.
    - Tích hợp nút **`+ Ghi tiền ăn/xăng/vé`** ngay trên từng thẻ điểm dừng và **Bảng Quyết Toán Công Nợ 2 Người** ở cuối trang.
 
 ### 3.2. Trang thiết lập: `Create custom tour +` (Studio Lên Kế Hoạch)
+
 - **Phân mục 1 (Gom địa điểm & Xếp thứ tự)**: Biểu mẫu thêm địa điểm mới vào Kho tạm hoặc đưa thẳng vào từng ngày; nút đẩy thứ tự Lên/Xuống giữa các điểm dừng.
 - **Phân mục 2 (Checklist Hành lý)**: Quản lý danh sách đồ dùng chung (gắn tên người mang) và đồ cá nhân của 2 người, kèm nút tự động gợi ý đồ theo số ngày và phương tiện.
 - **Phân mục 3 (Cấu hình Chuyến đi)**: Chỉnh sửa tên chuyến đi, số ngày, phương tiện và tổng ngân sách dự kiến.
@@ -57,19 +62,29 @@ Xây dựng một **All-in-One Travel Web App** giải quyết trọn vẹn 6 nh
 ## 4. Kiến Trúc Kỹ Thuật & Công Nghệ Đề Xuất (Tech Stack)
 
 ### 4.1. Sơ đồ kiến trúc tổng thể
-$$\text{React Client (Vite + Tailwind)} \quad \longleftrightarrow \quad \text{Node.js REST API (Express + Prisma)} \quad \longleftrightarrow \quad \text{PostgreSQL (Supabase / Neon)}$$
+
+```mermaid
+flowchart LR
+    client["React Client<br/>(Vite + Tailwind)"]
+    api["Node.js REST API<br/>(Express + Prisma)"]
+    database["PostgreSQL<br/>(Supabase / Neon)"]
+
+    client <--> api <--> database
+```
 
 Song song đó, trình duyệt/server tích hợp trực tiếp 2 nguồn dữ liệu thời gian thực miễn phí:
+
 - **Thời tiết khí tượng**: `https://api.open-meteo.com/v1/forecast`
 - **Đường đi & Khoảng cách**: `https://router.project-osrm.org/route/v1/driving`
 
 ### 4.2. Chi tiết bộ công nghệ
+
 | Thành phần | Công nghệ lựa chọn | Mục đích sử dụng |
 | :--- | :--- | :--- |
 | **Frontend** | React 18 (Vite), Tailwind CSS, Lucide Icons | Xây dựng giao diện 3 tầng mượt mà, phản hồi nhanh, hỗ trợ cả máy tính và điện thoại. |
 | **Bản đồ ảnh** | SVG Interactive Overlay / Leaflet (`CRS.Simple`) | Phủ lớp nhãn điểm dừng và đường nối lộ trình lên bản đồ phân vùng hoặc ảnh tĩnh của người dùng. |
 | **Backend** | Node.js, Express.js | Cung cấp RESTful API xử lý lưu trữ lịch trình, tọa độ ghim, chi tiêu và hành lý. |
-| **ORM & Database** | Prisma ORM + PostgreSQL (Supabase/Neon) | Quản lý dữ liệu có cấu trúc, đảm bảo toàn vẹn khóa ngoại giữa Chuyến đi $\rightarrow$ Điểm dừng $\rightarrow$ Chi tiêu. |
+| **ORM & Database** | Prisma ORM + PostgreSQL (Supabase/Neon) | Quản lý dữ liệu có cấu trúc, đảm bảo toàn vẹn khóa ngoại giữa Chuyến đi → Điểm dừng → Chi tiêu. |
 | **Triển khai (Deploy)** | Vercel (Frontend) + Render/Railway (Backend) | Đưa sản phẩm lên môi trường Internet miễn phí để cả 2 người cùng truy cập. |
 
 ---
@@ -166,29 +181,36 @@ model PackingItem {
 ## 6. Công Thức Nghiệp Vụ & Thuật Toán Cốt Lõi (Core Business Logic)
 
 ### 6.1. Công thức ánh xạ tọa độ điểm ghim trên ảnh bản đồ bất kỳ
-Để các điểm dừng không bị lệch vị trí khi hiển thị trên màn hình máy tính và điện thoại có kích thước khác nhau, tọa độ điểm ghim $(X, Y)$ khi người dùng bấm chuột lên khung bản đồ có chiều rộng $W$ và chiều cao $H$ được chuẩn hóa về hệ phần trăm $[0, 100]$:
 
-$$X_{\%} = \text{clamp}\left(\frac{x_{\text{click}} - x_{\text{left}}}{W} \times 100, \, 6, \, 94\right), \quad Y_{\%} = \text{clamp}\left(\frac{y_{\text{click}} - y_{\text{top}}}{H} \times 100, \, 8, \, 92\right)$$
+Để các điểm dừng không bị lệch vị trí khi hiển thị trên màn hình máy tính và điện thoại có kích thước khác nhau, tọa độ điểm ghim `(X, Y)` khi người dùng bấm chuột lên khung bản đồ có chiều rộng `W` và chiều cao `H` được chuẩn hóa về hệ phần trăm `[0, 100]`:
+
+X<sub>%</sub> = clamp(((x<sub>click</sub> − x<sub>left</sub>) / W) × 100, 6, 94)
+
+Y<sub>%</sub> = clamp(((y<sub>click</sub> − y<sub>top</sub>) / H) × 100, 8, 92)
 
 ### 6.2. Thuật toán cấn trừ công nợ 2 người (2-Person Splitwise)
-Gọi $E$ là tập hợp các khoản chi tiêu trong chuyến đi. Với mỗi khoản chi $i \in E$ có số tiền $A_i$:
-- Biến số dư nợ ròng $\Delta_{\text{net}}$ (Dương nếu **Người B nợ Người A**, Âm nếu **Người A nợ Người B**) được tính tích lũy như sau:
 
-$$\Delta_{\text{net}} = \sum_{i \in E} \delta_i$$
+Gọi `E` là tập hợp các khoản chi tiêu trong chuyến đi. Với mỗi khoản chi `i ∈ E` có số tiền A<sub>i</sub>:
 
-Trong đó giá trị $\delta_i$ của từng giao dịch được xác định bởi người trả (`paidBy`) và hình thức chia (`splitType`):
+- Biến số dư nợ ròng Δ<sub>net</sub> (Dương nếu **Người B nợ Người A**, Âm nếu **Người A nợ Người B**) được tính tích lũy như sau:
+
+Δ<sub>net</sub> = ∑<sub>i ∈ E</sub> δ<sub>i</sub>
+
+Trong đó giá trị δ<sub>i</sub> của từng giao dịch được xác định bởi người trả (`paidBy`) và hình thức chia (`splitType`):
+
 - Nếu `paidBy = userA`:
-  - `splitType = EQUAL` (Chia đôi 50/50): $\delta_i = +\frac{A_i}{2}$
-  - `splitType = FOR_OTHER` (A ứng trả hộ B $100\%$): $\delta_i = +A_i$
-  - `splitType = PERSONAL` (A tự chi cho riêng mình): $\delta_i = 0$
+  - `splitType = EQUAL` (Chia đôi 50/50): δ<sub>i</sub> = +A<sub>i</sub>/2
+  - `splitType = FOR_OTHER` (A ứng trả hộ B 100%): δ<sub>i</sub> = +A<sub>i</sub>
+  - `splitType = PERSONAL` (A tự chi cho riêng mình): δ<sub>i</sub> = 0
 - Nếu `paidBy = userB`:
-  - `splitType = EQUAL` (Chia đôi 50/50): $\delta_i = -\frac{A_i}{2}$
-  - `splitType = FOR_OTHER` (B ứng trả hộ A $100\%$): $\delta_i = -A_i$
-  - `splitType = PERSONAL` (B tự chi cho riêng mình): $\delta_i = 0$
+  - `splitType = EQUAL` (Chia đôi 50/50): δ<sub>i</sub> = −A<sub>i</sub>/2
+  - `splitType = FOR_OTHER` (B ứng trả hộ A 100%): δ<sub>i</sub> = −A<sub>i</sub>
+  - `splitType = PERSONAL` (B tự chi cho riêng mình): δ<sub>i</sub> = 0
 
 Kết thúc chuyến đi:
-- Nếu $\Delta_{\text{net}} > 0$: **Người B** chỉ cần chuyển khoản một lần duy nhất số tiền $|\Delta_{\text{net}}|$ cho **Người A**.
-- Nếu $\Delta_{\text{net}} < 0$: **Người A** chỉ cần chuyển khoản một lần duy nhất số tiền $|\Delta_{\text{net}}|$ cho **Người B**.
+
+- Nếu Δ<sub>net</sub> > 0: **Người B** chỉ cần chuyển khoản một lần duy nhất số tiền |Δ<sub>net</sub>| cho **Người A**.
+- Nếu Δ<sub>net</sub> < 0: **Người A** chỉ cần chuyển khoản một lần duy nhất số tiền |Δ<sub>net</sub>| cho **Người B**.
 
 ---
 
@@ -217,11 +239,11 @@ travel-companion-app/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── HeaderNav.jsx       # Thanh chuyển đổi Explore / Create custom tour +
+│   │   │   ├── HeaderNav.jsx         # Thanh chuyển đổi Explore / Create custom tour +
 │   │   │   ├── HeroWeatherBanner.jsx # Tầng 1: Banner cảnh quan & Thời tiết Open-Meteo
-│   │   │   ├── SplitMapSection.jsx # Tầng 2: Sidebar Lịch trình tổng & Bản đồ lộ trình
-│   │   │   ├── DetailedTimeline.jsx# Tầng 3: Lịch chi tiết, Ghi chi tiêu & Bảng công nợ
-│   │   │   └── CustomTourStudio.jsx# Trang 2: Gom địa điểm, Xếp thứ tự & Checklist hành lý
+│   │   │   ├── SplitMapSection.jsx   # Tầng 2: Sidebar Lịch trình tổng & Bản đồ lộ trình
+│   │   │   ├── DetailedTimeline.jsx  # Tầng 3: Lịch chi tiết, Ghi chi tiêu & Bảng công nợ
+│   │   │   └── CustomTourStudio.jsx  # Trang 2: Gom địa điểm, Xếp thứ tự & Checklist hành lý
 │   │   ├── services/
 │   │   │   ├── api.js              # Gọi REST API tới Backend Node.js
 │   │   │   └── realtime.js         # Tích hợp Open-Meteo API & OSRM Routing API
@@ -248,38 +270,49 @@ travel-companion-app/
 ## 9. Quy Trình Thực Thi Từng Bước (Implementation Roadmap)
 
 ### Giai đoạn 1: Khởi tạo Cơ sở dữ liệu & Backend (Ngày 1 - 2)
+
 1. Đăng ký một tài khoản miễn phí trên **Supabase** hoặc **Neon.tech**, tạo một project PostgreSQL mới và lấy chuỗi kết nối `DATABASE_URL`.
 2. Khởi tạo thư mục `server/`, cài đặt các gói:
+
    ```bash
    npm init -y
    npm install express cors dotenv @prisma/client
    npm install -D prisma nodemon
    npx prisma init
    ```
+
 3. Dán nội dung mục **5. Thiết Kế Cơ Sở Dữ Liệu** vào tệp `prisma/schema.prisma` và chạy lệnh tạo bảng:
+
    ```bash
    npx prisma migrate dev --name init_travel_companion
    ```
+
 4. Viết các API CRUD cơ bản trong `server/src/index.js` theo danh sách ở mục 7.
 
 ### Giai đoạn 2: Xây dựng Giao diện React 3 Tầng & Studio Lên Lịch (Ngày 3 - 4)
+
 1. Khởi tạo thư mục `client/` bằng Vite:
+
    ```bash
    npm create vite@latest client -- --template react
    cd client && npm install lucide-react tailwindcss
    ```
+
 2. Đưa mã nguồn giao diện mẫu (`TravelCompanionApp.jsx`) vào `client/src/App.jsx` và tách thành các component con dễ bảo trì.
 3. Kiểm tra luồng cuộn mượt giữa 3 tầng trên trang `Explore Hà Giang` và luồng thêm/sửa dữ liệu ở trang `Create custom tour +`.
 
 ### Giai đoạn 3: Tích hợp Bản đồ Ảnh & API Thời gian thực (Ngày 5)
+
 1. Tích hợp hàm tải ảnh bản đồ cá nhân (lưu lên Cloudinary miễn phí hoặc lưu dạng URL/Base64 vào trường `customMapUrl` của bảng `Trip`).
 2. Tinh chỉnh bộ gọi API thời tiết **Open-Meteo** và bộ tính quãng đường **OSRM** kèm cơ chế lưu đệm (cache) trong `sessionStorage` để tránh gọi lại quá nhiều lần khi chuyển trang.
 
 ### Giai đoạn 4: Kết nối Full-Stack & Đồng bộ 2 Người dùng (Ngày 6)
+
 1. Thay thế các hàm cập nhật `useState` cục bộ trên React bằng các lời gọi `fetch` / `axios` tới Backend Node.js.
-2. Bổ sung cơ chế tự động làm mới dữ liệu (Polling mỗi $15\text{ giây}$ hoặc nút `Đồng bộ`) để khi một người vừa nhập khoản chi tiêu trên điện thoại của mình thì điện thoại của người kia cũng cập nhật ngay số dư công nợ.
+2. Bổ sung cơ chế tự động làm mới dữ liệu (Polling mỗi 15 giây hoặc nút `Đồng bộ`) để khi một người vừa nhập khoản chi tiêu trên điện thoại của mình thì điện thoại của người kia cũng cập nhật ngay số dư công nợ.
 
 ### Giai đoạn 5: Kiểm thử & Đưa sản phẩm lên Internet (Ngày 7)
+
 1. Đẩy mã nguồn lên GitHub.
 2. Kết nối thư mục `server` lên **Render.com** (Web Service miễn phí) và thư mục `client` lên **Vercel.com**.
 3. Chia sẻ đường dẫn Web App cho bạn đồng hành và lưu ra màn hình chính điện thoại (Add to Home Screen) để sử dụng trực tiếp trong chuyến đi.
