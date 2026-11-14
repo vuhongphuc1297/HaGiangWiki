@@ -2,7 +2,7 @@
 
 - Công cụ: built-in `image_gen`.
 - Ảnh: `hagiangwiki-ui-demo-v1.png`.
-- Nguồn: `docs/readme.md`, `docs/CAU_TRUC_HE_THONG.md`, `docs/QUY_TRINH_DU_AN.md`.
+- Nguồn: `README.md`, `docs/CAU_TRUC_HE_THONG.md`, `docs/QUY_TRINH_DU_AN.md`.
 - Phạm vi: một ảnh concept gồm ba màn hình di động (Lịch trình, Bản đồ, Chi tiêu); chưa phải app hoạt động. Ngày, thời tiết, địa điểm và số tiền hiển thị là dữ liệu minh họa. Bản đồ là sơ đồ minh họa.
 
 ## Prompt đã sử dụng
