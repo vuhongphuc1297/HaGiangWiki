@@ -10,6 +10,7 @@ import { ErrorNotice, Loading } from '../../components/ui/Feedback';
 import { SettingsModal } from '../trip/SettingsModal';
 import { EditTripModal } from '../trip/EditTripModal';
 import { InviteModal } from '../trip/InviteModal';
+import { MembersModal } from '../trip/MembersModal';
 import { TripHero } from './TripHero';
 import { DayTabs } from './DayTabs';
 import { Timeline } from './Timeline';
@@ -17,7 +18,7 @@ import { PlacePool } from './PlacePool';
 import { AddStopModal, AssignStopModal, DeleteStopDialog, DemoStopNotice, EditStopModal } from './StopModals';
 import type { Stop, Trip, TripUpdate } from '../../types/api';
 
-type Modal = { kind: 'settings' | 'invite' | 'add' | 'demo' } | { kind: 'edit-trip'; trip: Trip } | { kind: 'assign' | 'edit' | 'delete'; trip: Trip; stop: Stop } | null;
+type Modal = { kind: 'settings' | 'invite' | 'members' | 'add' | 'demo' } | { kind: 'edit-trip'; trip: Trip } | { kind: 'assign' | 'edit' | 'delete'; trip: Trip; stop: Stop } | null;
 
 export function HomePage() {
   const { user, trip, isDemo, loading, syncing, error, syncError, refresh, applyTrip } = useTrip();
@@ -51,7 +52,7 @@ export function HomePage() {
   useEffect(() => { setModal(null); setNotice(null); }, [trip?.id, user?.id]);
 
   return <>
-    <TopBar members={trip?.members} loading={loading} syncing={syncing} saving={reordering} error={Boolean(error || syncError)} onRefresh={() => { void refreshStops(); }} onSettings={() => setModal({ kind: 'settings' })} />
+    <TopBar members={trip?.members} loading={loading} syncing={syncing} saving={reordering} error={Boolean(error || syncError)} onRefresh={() => { void refreshStops(); }} onSettings={() => setModal({ kind: 'settings' })} onMembers={() => setModal({ kind: 'members' })} />
     {!trip && loading ? <Loading /> : error ? <main className="space-y-4 px-5 py-10"><h1 className="font-serif text-[32px] font-bold leading-tight">Hành trình chờ bạn.</h1><ErrorNotice>{error}</ErrorNotice><Button className="w-full" onClick={() => { void refresh(); }}><RefreshCw className="size-4" aria-hidden="true" />Thử lại</Button><Button tone="secondary" className="w-full" onClick={() => navigate('/onboarding?template=0')}>Tạo chuyến đi mới</Button></main> : trip && <main className="pb-[calc(176px+env(safe-area-inset-bottom))]">
       {syncError && <div className="mx-5 mt-4"><ErrorNotice><p>Chưa thể đồng bộ dữ liệu mới: {syncError}</p><p className="mt-1">Dữ liệu đã tải vẫn được giữ trên màn hình. Bấm Làm mới dữ liệu để thử lại.</p></ErrorNotice></div>}
       {notice?.tripId === trip.id && <div className="mx-5 mt-4 rounded-card border border-state-success/20 bg-accent-soft p-3 text-sm leading-6 text-accent"><div className="flex items-start gap-2"><Check className="mt-1 size-4 shrink-0" aria-hidden="true" /><p role="status" className="min-w-0 flex-1">{notice.message}</p><button type="button" className="icon-button -mr-2 -mt-2 shrink-0" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}><X className="size-4" aria-hidden="true" /></button></div>{notice.moved > 0 && <Button tone="quiet" className="mt-2 w-full text-accent" onClick={() => { navigate('/'); setSelectedDay(0); }}>Xem Kho lưu tạm</Button>}</div>}
@@ -63,6 +64,7 @@ export function HomePage() {
       </> : <Placeholder tab={tab} onItinerary={() => navigate('/')} />}
     </main>}
     <BottomNav active={tab} />
+    {modal?.kind === 'members' && trip && <MembersModal trip={trip} currentUserId={user?.id} isOwner={Boolean(owner)} onClose={() => setModal(null)} onInvite={() => { if (owner && trip.members.filter((member) => member.status === 'ACTIVE').length < 2) setModal({ kind: 'invite' }); }} />}
     {modal?.kind === 'settings' && <SettingsModal onClose={() => setModal(null)} onEditTrip={owner && trip ? () => setModal({ kind: 'edit-trip', trip }) : undefined} onInvite={owner && trip && trip.members.filter((member) => member.status === 'ACTIVE').length < 2 ? () => setModal({ kind: 'invite' }) : undefined} />}
     {modal?.kind === 'edit-trip' && owner && trip && modal.trip.id === trip.id && <EditTripModal trip={modal.trip} onSaved={onTripSaved} onReload={reloadEditedData} onClose={() => setModal(null)} />}
     {modal?.kind === 'invite' && trip && owner && <InviteModal trip={trip} onClose={() => setModal(null)} />}
