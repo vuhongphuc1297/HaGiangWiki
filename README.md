@@ -2,6 +2,8 @@
 
 > **Lấy cảm hứng thiết kế từ phong cách Editorial Map-First (`Hagiang Wiki - Explore the Loop`)**: Kết hợp trải nghiệm khám phá trực quan qua bản đồ với bộ công cụ quản lý lịch trình, thời tiết khí tượng thời gian thực, sổ chi tiêu tại từng điểm dừng và cấn trừ công nợ dành riêng cho 2 người đồng hành.
 
+Hiện đã triển khai đến **Bước 2.3**: lập lịch dùng chung, OWNER sửa cấu hình chuyến, giảm ngày chuyển điểm về Kho tạm, cảnh báo xung đột version và làm mới thủ công/khi quay lại ứng dụng. Hướng dẫn chạy và nghiệm thu hiện hành tại [docs/FRONTEND.md](docs/FRONTEND.md), thiết lập PostgreSQL tại [docs/DATABASE.md](docs/DATABASE.md); phần bên dưới giữ bản thiết kế tổng thể. Chạy `npm run dev` từ thư mục gốc. Các lệnh xác minh: `npm run typecheck`, `npm run build`, `npm run test:auth`, `npm run test:stops`, `npm run test:sync`.
+
 ---
 
 ## 1. Tổng Quan Dự Án (Project Overview)

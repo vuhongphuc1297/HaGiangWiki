@@ -2,9 +2,9 @@
 
 > Kế hoạch xây dựng ứng dụng lập lịch trình, bản đồ và quản lý chi tiêu du lịch dành cho hai người.
 
-- **Ngày cập nhật:** 09/11/2026.
+- **Ngày cập nhật:** 15/11/2026.
 - **Thư mục dự án:** `D:\Dev\HaGiangWiki`.
-- **Trạng thái:** đã tạo thư mục dự án; chưa triển khai mã nguồn.
+- **Trạng thái:** đã có nền móng dữ liệu/xác thực, API quản lý điểm dừng và giao diện lập lịch dùng chung đến Bước 2.3; M1 đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
 - **Khung thời gian tham khảo:** 6 tuần cho 1 lập trình viên làm toàn thời gian.
 - **Cách sử dụng:** thực hiện theo thứ tự phụ thuộc; chỉ đánh dấu hoàn thành khi đạt tiêu chí nghiệm thu, không chỉ khi đã viết xong giao diện.
 
@@ -101,15 +101,17 @@ flowchart TD
 
 **Công việc**
 
-- [ ] Thêm, sửa, xóa địa điểm; lưu kho tạm với `day = 0`.
-- [ ] Chuyển địa điểm vào ngày, chuyển giữa các ngày và đổi thứ tự trong ngày.
-- [ ] Cập nhật thứ tự theo transaction; xác định cách đánh số nhãn hiển thị.
-- [ ] Hiển thị lịch trình, giờ, ghi chú, đặt chỗ và dự toán tại điểm dừng.
-- [ ] Cập nhật cấu hình chuyến đi và xử lý giảm số ngày theo quy tắc đã chốt.
-- [ ] Bổ sung trạng thái tải, dữ liệu trống, lỗi lưu và dữ liệu đã thay đổi trên thiết bị khác.
-- [ ] Làm mới dữ liệu trên hai thiết bị; phát hiện cập nhật dựa trên version cũ.
+- [x] Thêm, sửa, xóa địa điểm; lưu kho tạm với `day = 0`.
+- [x] Chuyển địa điểm vào ngày, chuyển giữa các ngày và đổi thứ tự trong ngày.
+- [x] Cập nhật thứ tự theo transaction; đánh số nhãn hiển thị liên tục từ 01.
+- [x] Hiển thị lịch trình, giờ, ghi chú (gồm thông tin đặt chỗ) và dự toán tại điểm dừng.
+- [x] Cập nhật cấu hình chuyến đi và xử lý giảm số ngày theo quy tắc đã chốt.
+- [x] Bổ sung trạng thái tải, dữ liệu trống, lỗi lưu và dữ liệu đã thay đổi trên thiết bị khác.
+- [x] Làm mới dữ liệu thủ công/ngầm khi quay lại; phát hiện cập nhật dựa trên version cũ, đã kiểm tra bằng hai phiên trình duyệt độc lập.
 
 **Mốc M1:** hai thiết bị cùng thêm/sửa/xếp điểm dừng; tải lại vẫn đúng dữ liệu; thay đổi thứ tự không làm mất hoặc trùng điểm; quyền truy cập được áp dụng cho mọi thao tác.
+
+**Kết quả Bước 2.3:** OWNER sửa cấu hình và giảm 3 → 2 ngày, hai điểm Ngày 3 chuyển vào Kho tạm; MEMBER chỉ xem cấu hình, làm mới thấy thay đổi. Hai tài khoản cùng thêm/xếp/đổi thứ tự rồi F5 giữ đúng dữ liệu; xung đột 409 ở chuyến/điểm dừng giữ bản nháp và có nút làm mới. Đạt typecheck/build và 64 kiểm tra tự động (30 auth, 25 stops, 9 sync). Chi tiết, ảnh và giới hạn nghiệm thu tại [FRONTEND.md](FRONTEND.md#cấu-hình-chuyến-đi-và-đồng-bộ-hai-người-bước-23). Chưa coi mô phỏng là nghiệm thu thực địa trên hai điện thoại.
 
 ### Tuần 3 — Chi tiêu, công nợ và checklist
 
@@ -183,10 +185,10 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 
 ## 7. Kịch bản nghiệm thu xuyên suốt
 
-- [ ] A tạo chuyến đi 3 ngày, cấp quyền cho B; B mở được trên thiết bị khác.
-- [ ] A thêm địa điểm vào kho tạm, B xếp vào ngày 1; cả hai tải lại vẫn thấy đúng lịch.
-- [ ] Hai người cập nhật cùng một dữ liệu; ứng dụng phát hiện và xử lý xung đột theo quy tắc đã chốt.
-- [ ] Đổi thứ tự điểm dừng và giảm số ngày không làm mất dữ liệu âm thầm.
+- [x] A tạo chuyến đi 3 ngày, cấp quyền cho B; B mở được trong phiên cookie độc lập (mô phỏng thiết bị khác).
+- [x] A thêm địa điểm vào kho tạm, B xếp vào ngày 1; cả hai tải lại vẫn thấy đúng lịch.
+- [x] Hai người cập nhật cùng một dữ liệu; ứng dụng phát hiện và xử lý xung đột theo quy tắc đã chốt.
+- [x] Đổi thứ tự điểm dừng và giảm số ngày không làm mất dữ liệu âm thầm.
 - [ ] Thêm khoản chi với đủ ba kiểu chia, sửa/xóa khoản chi và kiểm tra số dư.
 - [ ] Kiểm tra tình huống tiền lẻ, số dư bằng 0 và ghi nhận chuyển trả một phần/toàn bộ.
 - [ ] Kiểm tra khoản chi không thể gắn điểm dừng thuộc chuyến khác.
@@ -203,8 +205,8 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 | Thư mục dự án | Đã tạo | Có thư mục `HaGiangWiki`. |
 | Tài liệu tổng quan dự án | Đã tạo | Có tệp `readme.md`. |
 | Tài liệu quy trình | Đã tạo | Có tệp `QUY_TRINH_DU_AN.md`. |
-| Tuần 1 | Chưa bắt đầu | Môi trường thử, mô hình dữ liệu và luồng truy cập đạt nghiệm thu. |
-| Tuần 2 / M1 | Chưa bắt đầu | Kết quả thử lập lịch trên hai thiết bị. |
+| Tuần 1 | Đã có nền móng cục bộ; còn nghiệm thu triển khai | Prisma/PostgreSQL, session, lời mời, quyền và kiểm thử HTTP; hướng dẫn tại DATABASE.md, FRONTEND.md. |
+| Tuần 2 / M1 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 2.1–2.3; CRUD/xếp lịch, co ngày không mất dữ liệu, OWNER/MEMBER, 409, refresh; 64 test pass và ảnh nghiệm thu cục bộ. |
 | Tuần 3 / M2 | Chưa bắt đầu | Kết quả kiểm thử công nợ và chống ghi trùng. |
 | Tuần 4 | Chưa bắt đầu | Bản đồ/thời tiết hoạt động và có phương án khi lỗi. |
 | Tuần 5 | Chưa bắt đầu | Kết quả thử ngoại tuyến, gửi lại và xung đột. |
