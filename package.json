@@ -17,7 +17,8 @@
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test:auth": "npm run test:auth --workspace backend",
-    "test:stops": "npm run test:stops --workspace backend"
+    "test:stops": "npm run test:stops --workspace backend",
+    "test:sync": "npm run test:sync --workspace frontend"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"
