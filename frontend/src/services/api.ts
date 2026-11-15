@@ -2,7 +2,7 @@ type FieldError = { field: string; message: string };
 type ApiOptions = Omit<RequestInit, 'body' | 'credentials'> & { body?: unknown; timeoutMs?: number };
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number, public readonly details: FieldError[] = []) {
+  constructor(message: string, public readonly status: number, public readonly details: FieldError[] = [], public readonly currentVersion?: number) {
     super(message);
     this.name = 'ApiError';
   }
@@ -33,7 +33,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       const details = Array.isArray(error.details) ? error.details.filter((item): item is FieldError => (
         typeof item === 'object' && item !== null && typeof item.field === 'string' && typeof item.message === 'string'
       )) : [];
-      throw new ApiError(typeof error.error === 'string' ? error.error : 'Chưa thể hoàn tất yêu cầu. Hãy thử lại.', response.status, details);
+      throw new ApiError(typeof error.error === 'string' ? error.error : 'Chưa thể hoàn tất yêu cầu. Hãy thử lại.', response.status, details, typeof error.currentVersion === 'number' ? error.currentVersion : undefined);
     }
     if (data === undefined && response.status !== 204) throw new ApiError('Phản hồi từ máy chủ chưa hợp lệ. Hãy thử lại.', response.status);
     return data as T;

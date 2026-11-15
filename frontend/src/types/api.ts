@@ -20,6 +20,7 @@ export type Trip = {
 export type TripSummary = Omit<Trip, 'members' | 'stops'> & {
   membership: { id: string; nickname: string; role: string; status: string };
 };
+export type TripUpdate = Trip & { movedStopsCount: number };
 export type AuthMe = { user: User; trips: TripSummary[] };
 export type Invite = { inviteToken: string; inviteUrl: string; expiresAt: string };
 export type InvitePreview =
