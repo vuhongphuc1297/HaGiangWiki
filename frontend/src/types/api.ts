@@ -1,5 +1,5 @@
 export const DEMO_TRIP_ID = 'demo_trip_hagiang_20261120';
-export const ROAD_IMAGE = '/images/ha-giang-road.png';
+export const ROAD_IMAGE = '/images/pexels-ben-tran-1629957976-34101592.jpg';
 
 export type User = { id: string; displayName: string };
 export type TripMember = {
