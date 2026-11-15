@@ -1,4 +1,4 @@
-# HaGiangWiki — Giao diện mobile bước 1.4, 2.2 và 2.3
+# HaGiangWiki — Giao diện mobile bước 1.4, 2.2, 2.3 và 2.4
 
 ## Chạy và thử luồng hai người
 
@@ -47,6 +47,17 @@ Nghiệm thu với `npm run dev`, Chromium tại 390×844, 320×844 và 1440×90
 Đã kiểm tra bố cục 320×844, 390×844 và 1440×900 theo hệ thiết kế hiện có. Ảnh, log kiểm thử, đối chiếu DB và receipt SHA-256 nằm tại `tmp/trip-settings-sync-verification/visual-evidence.json` (artifact cục bộ, không commit); giữ lại dữ liệu QA riêng. Chưa kiểm thử điện thoại vật lý hoặc đo FPS. Cơ chế quay lại ứng dụng được kiểm tra bằng 9 unit test với đồng hồ và sự kiện mô phỏng, chưa nghiệm thu vòng đời Zalo/Maps trên iOS/Android thật.
 
 Từ thư mục gốc, chạy `npm run typecheck`, `npm run build`, `npm run test:auth` (30 kiểm tra), `npm run test:stops` (25 kiểm tra), `npm run test:sync` (9 kiểm tra). Bộ sync không cần DB; hai bộ HTTP cần PostgreSQL theo [DATABASE.md](DATABASE.md). Khi build trên Windows, dừng API dev trước để Prisma có thể sinh lại client.
+
+## Thành viên từ TopBar (Bước 2.4)
+
+- Cụm avatar là một nút mở **Thành viên chuyến đi**, có tên truy cập nêu số lượng X/2 và vùng bấm tối thiểu 44px. Nút xuất hiện cả dưới 375px; dấu cộng viền đứt gợi ý mời khi mới có một người. Chạm avatar hoặc dấu cộng đều mở cùng sheet. Trong lúc tải hoặc lưu thứ tự, nút được khóa cùng các điều khiển còn lại.
+- Sheet dùng danh sách thành viên `ACTIVE` hiện tại từ TripContext, hiển thị tên (ưu tiên displayName, dự phòng nickname), avatar và màu theo vai trò, huy hiệu **Trưởng nhóm / Người tạo**, **Bạn đồng hành / Người tham gia**, cùng nhãn **(Bạn)** theo userId. Tên chuyến và tên thành viên dài được xuống dòng.
+- Khi mới có một người, hiển thị ô chờ viền đứt. Chỉ OWNER có nút **Mời người đồng hành**; nút chuyển sang InviteModal hiện có để tạo liên kết 48 giờ và sao chép. MEMBER không có nút mời. Khi đủ hai người, hiển thị thông báo đủ thành viên và nút **Về lịch trình**. Lịch trình mẫu chỉ xem, không tạo lời mời.
+- Khi người thứ hai tham gia, OWNER dùng nút làm mới hoặc luồng đồng bộ khi quay lại của Bước 2.3 để nhận đủ hai avatar. Sheet đang mở cũng đọc dữ liệu mới từ context. Thông báo đủ người mô tả tính năng cùng lập lịch hiện có; chưa khẳng định chi tiêu thời gian thực vì phần Chi tiêu vẫn đang chờ triển khai.
+
+Đã thử trên Chromium 390×844, 320×844 và 1440×900: từ TopBar mở sheet một người → mời → sao chép → tham gia bằng phiên cookie độc lập → OWNER làm mới thấy hai avatar; cả hai xem đúng vai trò và nhãn Bạn; F5 giữ danh sách; lịch trình mẫu không có nút mời; Enter mở và Escape đóng, trả focus về nút thành viên. Ở 320px, đo vùng bấm 58×44px, sheet rộng đúng 320px và không tràn ngang. Không ghi nhận lỗi console trên hai phiên QA. Đây là mô phỏng trình duyệt, chưa thử chạm trên điện thoại vật lý hoặc đo FPS.
+
+Typecheck/build toàn dự án và 64 kiểm tra hồi quy (auth 30, stops 25, sync 9) đều pass. Ảnh, log và receipt SHA-256 cục bộ: `tmp/members-verification/visual-evidence.json`. Chuyến QA tạo riêng cho luồng mời, dùng lại hai tài khoản QA của M1, giữ dữ liệu để đối chiếu; không thay đổi seed, API hoặc schema cho Bước 2.4.
 
 ## Cấu trúc và thiết kế
 

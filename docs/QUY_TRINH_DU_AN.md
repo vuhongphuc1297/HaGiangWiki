@@ -4,7 +4,7 @@
 
 - **Ngày cập nhật:** 15/11/2026.
 - **Thư mục dự án:** `D:\Dev\HaGiangWiki`.
-- **Trạng thái:** đã có nền móng dữ liệu/xác thực, API quản lý điểm dừng và giao diện lập lịch dùng chung đến Bước 2.3; M1 đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
+- **Trạng thái:** đã có nền móng dữ liệu/xác thực, API quản lý điểm dừng và giao diện lập lịch dùng chung đến Bước 2.4; M1 đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
 - **Khung thời gian tham khảo:** 6 tuần cho 1 lập trình viên làm toàn thời gian.
 - **Cách sử dụng:** thực hiện theo thứ tự phụ thuộc; chỉ đánh dấu hoàn thành khi đạt tiêu chí nghiệm thu, không chỉ khi đã viết xong giao diện.
 
@@ -108,6 +108,7 @@ flowchart TD
 - [x] Cập nhật cấu hình chuyến đi và xử lý giảm số ngày theo quy tắc đã chốt.
 - [x] Bổ sung trạng thái tải, dữ liệu trống, lỗi lưu và dữ liệu đã thay đổi trên thiết bị khác.
 - [x] Làm mới dữ liệu thủ công/ngầm khi quay lại; phát hiện cập nhật dựa trên version cũ, đã kiểm tra bằng hai phiên trình duyệt độc lập.
+- [x] Bổ sung Bước 2.4: nút thành viên trên TopBar, danh sách ACTIVE có vai trò/nhãn Bạn, ô chờ và lối vào luồng mời 48 giờ; nghiệm thu một người → hai người qua hai phiên độc lập.
 
 **Mốc M1:** hai thiết bị cùng thêm/sửa/xếp điểm dừng; tải lại vẫn đúng dữ liệu; thay đổi thứ tự không làm mất hoặc trùng điểm; quyền truy cập được áp dụng cho mọi thao tác.
 
@@ -206,7 +207,7 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 | Tài liệu tổng quan dự án | Đã tạo | Có tệp `readme.md`. |
 | Tài liệu quy trình | Đã tạo | Có tệp `QUY_TRINH_DU_AN.md`. |
 | Tuần 1 | Đã có nền móng cục bộ; còn nghiệm thu triển khai | Prisma/PostgreSQL, session, lời mời, quyền và kiểm thử HTTP; hướng dẫn tại DATABASE.md, FRONTEND.md. |
-| Tuần 2 / M1 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 2.1–2.3; CRUD/xếp lịch, co ngày không mất dữ liệu, OWNER/MEMBER, 409, refresh; 64 test pass và ảnh nghiệm thu cục bộ. |
+| Tuần 2 / M1 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 2.1–2.4; CRUD/xếp lịch, co ngày không mất dữ liệu, OWNER/MEMBER, 409, refresh, danh sách thành viên và mời từ TopBar; 64 test pass và ảnh nghiệm thu cục bộ. |
 | Tuần 3 / M2 | Chưa bắt đầu | Kết quả kiểm thử công nợ và chống ghi trùng. |
 | Tuần 4 | Chưa bắt đầu | Bản đồ/thời tiết hoạt động và có phương án khi lỗi. |
 | Tuần 5 | Chưa bắt đầu | Kết quả thử ngoại tuyến, gửi lại và xung đột. |
