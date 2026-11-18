@@ -61,11 +61,11 @@ export function PackingPage({ isDemo, onCreate }: { isDemo: boolean; onCreate: (
             <Backpack className="mx-auto mb-3 size-8 text-accent" strokeWidth={1.3} aria-hidden="true" />
             <h3 className="font-serif text-xl font-semibold">Balo còn trống.</h3>
             <p className="mt-2 text-sm leading-6 text-text-muted">Thêm món đầu tiên ở ô bên dưới, hoặc nạp gợi ý để bắt đầu chuẩn bị.</p>
-          </div> : <ul className="divide-y divide-border-main rounded-card border border-border-main bg-surface">
-            {data.items.map((item) => <li key={item.id} className="flex items-center gap-1 px-2 py-2">
+          </div> : <ul className="space-y-2.5">
+            {data.items.map((item) => <li key={item.id} className={cn('flex items-center gap-1 rounded-btn border bg-surface px-2 py-2 transition-colors motion-reduce:transition-none', item.isPacked ? 'border-accent/60' : 'border-state-error/60')}>
               <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 px-2 py-2">
                 <input type="checkbox" className="size-6 shrink-0 cursor-pointer accent-accent disabled:cursor-wait" checked={item.isPacked} disabled={busy} onChange={() => { void packing.toggle(item.id); }} />
-                <span className="min-w-0"><span className={cn('block break-words text-sm leading-6 [overflow-wrap:anywhere]', item.isPacked && 'text-text-muted line-through opacity-70')}>{item.title}</span>
+                <span className="min-w-0"><span className="block break-words text-sm leading-6 [overflow-wrap:anywhere]">{item.title}</span>
                   {pendingId === item.id && <span className="block text-[10px] leading-5 text-accent">Đang lưu…</span>}
                 </span>
               </label>
