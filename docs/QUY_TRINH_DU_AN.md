@@ -2,9 +2,9 @@
 
 > Kế hoạch xây dựng ứng dụng lập lịch trình, bản đồ và quản lý chi tiêu du lịch dành cho hai người.
 
-- **Ngày cập nhật:** 15/11/2026.
+- **Ngày cập nhật:** 18/11/2026.
 - **Thư mục dự án:** `D:\Dev\HaGiangWiki`.
-- **Trạng thái:** đã có nền móng dữ liệu/xác thực, API quản lý điểm dừng và giao diện lập lịch dùng chung đến Bước 2.4; M1 đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
+- **Trạng thái:** đã hoàn thiện nền móng dữ liệu/xác thực (Tuần 1), lịch trình dùng chung đến Bước 2.4 (M1) và chi tiêu, quyết toán hai người, hành trang cá nhân riêng tư đến Bước 3.3 (M2); đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập với 108/108 kiểm thử tự động, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
 - **Khung thời gian tham khảo:** 6 tuần cho 1 lập trình viên làm toàn thời gian.
 - **Cách sử dụng:** thực hiện theo thứ tự phụ thuộc; chỉ đánh dấu hoàn thành khi đạt tiêu chí nghiệm thu, không chỉ khi đã viết xong giao diện.
 
@@ -21,7 +21,7 @@ Hai người có thể cùng chuẩn bị và sử dụng một chuyến đi qua
 - Giao diện ưu tiên điện thoại, có chuyển đổi giữa bản đồ và danh sách.
 - Một kiểu bản đồ địa lý, thời tiết cơ bản và ước tính quãng đường/thời gian di chuyển.
 - Thêm, sửa, xóa khoản chi; ba kiểu chia tiền; số dư công nợ và ghi nhận chuyển trả.
-- Checklist hành lý chung và cá nhân ở mức cơ bản.
+- Checklist hành lý cá nhân riêng tư cho từng người (điều chỉnh phạm vi tại Tuần 3: bỏ đồ chung, mỗi người quản lý balo độc lập).
 - Xem lịch trình đã tải khi mất mạng; thêm khoản chi vào hàng đợi để đồng bộ khi có mạng.
 - Trạng thái lưu dữ liệu rõ ràng; xuất hoặc sao lưu dữ liệu chuyến đi.
 
@@ -118,18 +118,20 @@ flowchart TD
 
 **Công việc**
 
-- [ ] Thêm, sửa, xóa chi tiêu, có thể gắn với điểm dừng hoặc chỉ gắn với chuyến đi.
-- [ ] Hỗ trợ người trả A/B và ba kiểu `EQUAL`, `FOR_OTHER`, `PERSONAL`.
-- [ ] Hiển thị dự toán, thực chi và chênh lệch theo quy tắc ngân sách đã thống nhất.
-- [ ] Tính công nợ, xử lý tiền lẻ và trạng thái không còn nợ.
-- [ ] Ghi nhận chuyển trả bằng dữ liệu thanh toán riêng; tính số dư còn lại.
-- [ ] Áp dụng chống gửi trùng ngay từ API ghi chi tiêu và chuyển trả.
-- [ ] Làm checklist cơ bản: đồ chung có người phụ trách, đồ cá nhân có trạng thái cho A/B.
-- [ ] Kiểm thử phép tính công nợ, sửa/xóa giao dịch và thao tác gửi lại yêu cầu.
+- [x] Thêm, sửa, xóa chi tiêu, có thể gắn với điểm dừng hoặc chỉ gắn với chuyến đi (gồm nút ghi nhanh từ thẻ điểm dừng trên Lịch trình).
+- [x] Hỗ trợ người trả A/B và ba kiểu `EQUAL`, `FOR_OTHER`, `PERSONAL`.
+- [x] Hiển thị dự toán, thực chi và chênh lệch theo quy tắc ngân sách đã thống nhất (cảnh báo >80% vàng, >100% đỏ).
+- [x] Tính công nợ bằng `BigInt`, xử lý tiền lẻ chính xác từng đồng và trạng thái không còn nợ.
+- [x] Ghi nhận chuyển trả bằng dữ liệu thanh toán riêng (`SettlementTransfer`); tính số dư còn lại và không cộng vào tổng chi.
+- [x] Áp dụng chống gửi trùng (`Idempotency-Key`) và kiểm tra version (`409`) ngay từ API ghi chi tiêu, chuyển trả và hành trang.
+- [x] Làm checklist hành trang cá nhân riêng tư cho từng người (điều chỉnh phạm vi theo yêu cầu chủ dự án: bỏ phần đồ chung; lọc cứng theo chủ sở hữu ở backend để A/B không thấy hoặc tác động đồ của nhau, kèm gợi ý 7 món phượt Hà Giang).
+- [x] Kiểm thử phép tính công nợ, sửa/xóa giao dịch, thao tác gửi lại yêu cầu và tính riêng tư hành trang.
 
 **Mốc M2:** các tình huống chia tiền cho kết quả đúng; sửa/xóa cập nhật đúng số dư; chuyển trả giảm đúng số còn nợ; gửi lại cùng giao dịch không tạo bản sao.
 
 **Ví dụ đối chiếu:** A trả 600.000đ chia đôi, B trả 200.000đ chia đôi, A trả hộ B 100.000đ ⇒ B nợ A 300.000đ. Nếu B đã chuyển trả A 100.000đ thì số còn nợ là 200.000đ. Khoản cá nhân không làm thay đổi công nợ giữa hai người.
+
+**Kết quả Tuần 3 (Bước 3.1–3.3):** hoàn thiện sổ chi tiêu, quyết toán công nợ hai người và hành trang cá nhân riêng tư mà không sửa đổi schema/migration. Đối chiếu hai phiên cookie độc lập đạt đúng kịch bản chuẩn 300k → 200k → 300k → 200k, ghi nhanh từ điểm dừng, xung đột 409, và xác nhận A/B không thấy hay sửa được hành trang của nhau. Đạt `typecheck`, `build` frontend và 108/108 kiểm thử tự động (auth 30, stops 25, sync 9, expenses 17, expense-ui 3, packing 15, packing-ui 9). Chi tiết tại [API_EXPENSES.md](API_EXPENSES.md), [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md), [API_PACKING.md](API_PACKING.md) và [FRONTEND_PACKING.md](FRONTEND_PACKING.md). Chưa coi mô phỏng trình duyệt là nghiệm thu thực địa trên hai điện thoại vật lý.
 
 ### Tuần 4 — Bản đồ địa lý và thời tiết cơ bản
 
@@ -190,9 +192,9 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 - [x] A thêm địa điểm vào kho tạm, B xếp vào ngày 1; cả hai tải lại vẫn thấy đúng lịch.
 - [x] Hai người cập nhật cùng một dữ liệu; ứng dụng phát hiện và xử lý xung đột theo quy tắc đã chốt.
 - [x] Đổi thứ tự điểm dừng và giảm số ngày không làm mất dữ liệu âm thầm.
-- [ ] Thêm khoản chi với đủ ba kiểu chia, sửa/xóa khoản chi và kiểm tra số dư.
-- [ ] Kiểm tra tình huống tiền lẻ, số dư bằng 0 và ghi nhận chuyển trả một phần/toàn bộ.
-- [ ] Kiểm tra khoản chi không thể gắn điểm dừng thuộc chuyến khác.
+- [x] Thêm khoản chi với đủ ba kiểu chia, sửa/xóa khoản chi và kiểm tra số dư.
+- [x] Kiểm tra tình huống tiền lẻ, số dư bằng 0 và ghi nhận chuyển trả một phần/toàn bộ.
+- [x] Kiểm tra khoản chi không thể gắn điểm dừng thuộc chuyến khác.
 - [ ] Ngắt mạng, đọc lịch đã tải, thêm khoản chi rồi đóng/mở lại ứng dụng.
 - [ ] Kết nối lại và gửi lại yêu cầu; mỗi khoản chi chỉ xuất hiện một lần.
 - [ ] Dịch vụ thời tiết/định tuyến lỗi; người dùng vẫn lập lịch và ghi tiền được.
@@ -208,7 +210,7 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 | Tài liệu quy trình | Đã tạo | Có tệp `QUY_TRINH_DU_AN.md`. |
 | Tuần 1 | Đã có nền móng cục bộ; còn nghiệm thu triển khai | Prisma/PostgreSQL, session, lời mời, quyền và kiểm thử HTTP; hướng dẫn tại DATABASE.md, FRONTEND.md. |
 | Tuần 2 / M1 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 2.1–2.4; CRUD/xếp lịch, co ngày không mất dữ liệu, OWNER/MEMBER, 409, refresh, danh sách thành viên và mời từ TopBar; 64 test pass và ảnh nghiệm thu cục bộ. |
-| Tuần 3 / M2 | Chưa bắt đầu | Kết quả kiểm thử công nợ và chống ghi trùng. |
+| Tuần 3 / M2 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 3.1–3.3; Expense/Settlement BigInt, 3 kiểu chia, chuyển trả, hành trang cá nhân riêng tư (bỏ đồ chung theo quyết định chủ dự án); 108 test pass và ảnh nghiệm thu cục bộ. |
 | Tuần 4 | Chưa bắt đầu | Bản đồ/thời tiết hoạt động và có phương án khi lỗi. |
 | Tuần 5 | Chưa bắt đầu | Kết quả thử ngoại tuyến, gửi lại và xung đột. |
 | Tuần 6 / M3 | Chưa bắt đầu | Kết quả nghiệm thu trọn luồng và bản phát hành. |
