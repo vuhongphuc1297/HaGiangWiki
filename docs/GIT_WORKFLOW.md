@@ -2,6 +2,12 @@
 
 Tài liệu này là **bộ quy chuẩn bắt buộc** dành cho Lập trình viên và AI Assistant khi thao tác với kho mã nguồn của dự án **HaGiangWiki**. Mọi hành động tạo nhánh, commit, đẩy mã nguồn và mở Pull Request (PR) phải tuân thủ nghiêm ngặt các điều khoản dưới đây.
 
+## Phân công với AI Assistant (yêu cầu của chủ dự án, 18/11/2026)
+
+Sau mỗi bước phát triển, AI phải tự hoàn tất **nhánh `feature/*` → commit rõ ràng → push lên origin**, sau khi các kiểm tra phù hợp đã đạt. Nếu tiếp tục cùng một bước, dùng lại nhánh feature hiện tại. Chỉ stage file thuộc phạm vi bước đó, chia commit theo phần việc có nghĩa và báo lại tên nhánh, commit mới, trạng thái push.
+
+**Người dùng tự tạo PR và merge.** AI dừng ở Bước 5; Bước 6, Bước 7 và quy trình phát hành bên dưới là hướng dẫn dành cho người dùng. AI chỉ thực hiện các thao tác đó khi được yêu cầu riêng, không tự tạo cả PR nháp. Quy tắc thường trực cũng được ghi ở [AGENTS.md](../AGENTS.md).
+
 ---
 
 ## 1. NGUYÊN TẮC BẤT KHẢ XÂM PHẠM (CORE INVARIANTS)
@@ -106,7 +112,7 @@ git commit -m "<type>(<scope>): <mô tả thay đổi>"
 git push -u origin feature/<ten-tinh-nang>
 ```
 
-### Bước 6: Mở Pull Request (PR) vào `dev`
+### Bước 6: Người dùng mở Pull Request (PR) vào `dev`
 1. Truy cập giao diện GitHub Repository.
 2. Mở Pull Request với cấu hình:
    - **Base branch**: `dev` *(chú ý: mặc định GitHub có thể để main, phải đổi sang dev)*.
@@ -116,7 +122,7 @@ git push -u origin feature/<ten-tinh-nang>
    - Các màn hình / tệp đã chỉnh sửa.
    - Trạng thái kiểm thử cục bộ (`typecheck`, `test`, `build` đã pass).
 
-### Bước 7: Merge vào `dev` và dọn dẹp nhánh
+### Bước 7: Người dùng merge vào `dev` và dọn dẹp nhánh
 1. Thực hiện merge trên GitHub (khuyến nghị dùng **Squash and Merge** để giữ lịch sử nhánh `dev` tinh gọn).
 2. Xóa nhánh feature trên GitHub sau khi merge.
 3. Ở máy cục bộ, đồng bộ lại nhánh `dev`:
