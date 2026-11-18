@@ -62,7 +62,7 @@ export function PackingPage({ isDemo, onCreate }: { isDemo: boolean; onCreate: (
             <h3 className="font-serif text-xl font-semibold">Balo còn trống.</h3>
             <p className="mt-2 text-sm leading-6 text-text-muted">Thêm món đầu tiên ở ô bên dưới, hoặc nạp gợi ý để bắt đầu chuẩn bị.</p>
           </div> : <ul className="space-y-2.5">
-            {data.items.map((item) => <li key={item.id} className={cn('flex items-center gap-1 rounded-btn border-4 px-1 py-1.5 transition-colors motion-reduce:transition-none', item.isPacked ? 'border-accent bg-accent-soft' : 'border-state-error bg-[#FBE9E7]')}>
+            {data.items.map((item) => <li key={item.id} className={cn('flex items-center gap-1 rounded-btn border-2 px-1 py-1.5 transition-colors motion-reduce:transition-none', item.isPacked ? 'border-accent bg-accent-soft' : 'border-state-error bg-[#FBE9E7]')}>
               <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 px-2 py-2">
                 <input type="checkbox" className="size-6 shrink-0 cursor-pointer accent-accent disabled:cursor-wait" checked={item.isPacked} disabled={busy} onChange={() => { void packing.toggle(item.id); }} />
                 <span className="min-w-0"><span className="block break-words text-sm leading-6 [overflow-wrap:anywhere]">{item.title}</span>
