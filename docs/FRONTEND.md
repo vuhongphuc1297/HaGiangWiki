@@ -1,4 +1,6 @@
-# HaGiangWiki — Giao diện mobile bước 1.4, 2.2, 2.3 và 2.4
+# HaGiangWiki — Giao diện mobile đến bước 3.2
+
+Tab **Chi tiêu** (`/?tab=expenses`) đã hoàn thành Bước 3.2: ngân sách, quyết toán hai người, thêm/sửa/xóa khoản chi, chuyển trả và ghi nhanh tại từng điểm dừng. Hướng dẫn, hành vi đồng bộ và nghiệm thu tại [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md).
 
 ## Chạy và thử luồng hai người
 
@@ -53,7 +55,7 @@ Từ thư mục gốc, chạy `npm run typecheck`, `npm run build`, `npm run tes
 - Cụm avatar là một nút mở **Thành viên chuyến đi**, có tên truy cập nêu số lượng X/2 và vùng bấm tối thiểu 44px. Nút xuất hiện cả dưới 375px; dấu cộng viền đứt gợi ý mời khi mới có một người. Chạm avatar hoặc dấu cộng đều mở cùng sheet. Trong lúc tải hoặc lưu thứ tự, nút được khóa cùng các điều khiển còn lại.
 - Sheet dùng danh sách thành viên `ACTIVE` hiện tại từ TripContext, hiển thị tên (ưu tiên displayName, dự phòng nickname), avatar và màu theo vai trò, huy hiệu **Trưởng nhóm / Người tạo**, **Bạn đồng hành / Người tham gia**, cùng nhãn **(Bạn)** theo userId. Tên chuyến và tên thành viên dài được xuống dòng.
 - Khi mới có một người, hiển thị ô chờ viền đứt. Chỉ OWNER có nút **Mời người đồng hành**; nút chuyển sang InviteModal hiện có để tạo liên kết 48 giờ và sao chép. MEMBER không có nút mời. Khi đủ hai người, hiển thị thông báo đủ thành viên và nút **Về lịch trình**. Lịch trình mẫu chỉ xem, không tạo lời mời.
-- Khi người thứ hai tham gia, OWNER dùng nút làm mới hoặc luồng đồng bộ khi quay lại của Bước 2.3 để nhận đủ hai avatar. Sheet đang mở cũng đọc dữ liệu mới từ context. Thông báo đủ người mô tả tính năng cùng lập lịch hiện có; chưa khẳng định chi tiêu thời gian thực vì phần Chi tiêu vẫn đang chờ triển khai.
+- Khi người thứ hai tham gia, OWNER dùng nút làm mới hoặc luồng đồng bộ khi quay lại của Bước 2.3 để nhận đủ hai avatar. Sheet đang mở cũng đọc dữ liệu mới từ context. Chi tiêu cũng dùng cùng luồng làm mới; chưa có đồng bộ thời gian thực.
 
 Đã thử trên Chromium 390×844, 320×844 và 1440×900: từ TopBar mở sheet một người → mời → sao chép → tham gia bằng phiên cookie độc lập → OWNER làm mới thấy hai avatar; cả hai xem đúng vai trò và nhãn Bạn; F5 giữ danh sách; lịch trình mẫu không có nút mời; Enter mở và Escape đóng, trả focus về nút thành viên. Ở 320px, đo vùng bấm 58×44px, sheet rộng đúng 320px và không tràn ngang. Không ghi nhận lỗi console trên hai phiên QA. Đây là mô phỏng trình duyệt, chưa thử chạm trên điện thoại vật lý hoặc đo FPS.
 
@@ -66,12 +68,13 @@ Typecheck/build toàn dự án và 64 kiểm tra hồi quy (auth 30, stops 25, s
 - `context/TripContext.tsx` tải phiên/chuyến, chọn mẫu khi phù hợp, cập nhật từ PATCH, gộp refresh nền và tránh response cũ ghi đè dữ liệu mới. `returnSync.ts` quản lý sự kiện quay lại ứng dụng và có unit test độc lập.
 - `components/layout/` chứa khung tối đa 420px, TopBar và BottomNav 76px có safe area. `components/ui/` chứa Button, Feedback và Sheet dùng native dialog để giữ focus, Escape và hoàn trả focus.
 - `features/itinerary/` chứa hero, day tabs, timeline, kho/tìm kiếm và form thêm/xếp điểm. `features/trip/` chứa onboarding, lời mời, cài đặt; `features/invite/` chứa preview/join.
+- `features/expenses/` chứa trang ngân sách/công nợ, các modal và context sổ chi tiêu. Dữ liệu tiền từ API được giữ dưới dạng chuỗi, hiển thị/tính phần chia bằng BigInt.
 - Giữ tokens của bản 00: Source Serif 4, Be Vietnam Pro, nền `#F7F3EC`, thẻ `#FFFEFC`, xanh `#28523B`, tuyến cam đất `#A94D2C`, bo góc 10/16/24px. Đối chiếu bố cục bản 01 và 04. Ảnh vùng cao dùng lại asset `tmp/design-prototype-draft-20261111/assets/ha-giang-road.png`, sao chép vào `public/images/`.
 - Các thành phần dùng dữ liệu thật, không tạo GPS giả. Đoạn 46 km/1 giờ 30 của tuyến mẫu có nhãn ước tính tham khảo; chưa gọi dịch vụ định tuyến.
 
 ## Phạm vi và kiểm chứng
 
-Bản đồ, Chi tiêu và Hành lý hiện là màn hình chờ. Chưa có service worker/cache ngoại tuyến, kéo thả hoặc realtime. Các thao tác điểm dừng kết nối API Bước 2.1, có kiểm tra quyền ACTIVE, version cho sửa/xóa/chuyển ngày và Idempotency-Key cho tất cả thao tác ghi.
+Bản đồ và Hành lý hiện là màn hình chờ. Chi tiêu kết nối API Bước 3.1; xem [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md). Chưa có service worker/cache ngoại tuyến, kéo thả hoặc realtime. Các thao tác điểm dừng kết nối API Bước 2.1, có kiểm tra quyền ACTIVE, version cho sửa/xóa/chuyển ngày và Idempotency-Key cho tất cả thao tác ghi.
 
 Đã thử trên Chromium với viewport 320×844, 390×844 và 1440×900: lịch trình/kho/tìm kiếm, form trống → sửa → gửi thành công, tạo bản sao, thêm điểm, xếp ngày và tải lại giữ dữ liệu; copy lời mời và reset nhãn; người B tham gia/đổi trang; dùng lại mã bị từ chối; đóng sheet bằng Escape trả focus; API ngắt → thông báo lỗi → thử lại phục hồi. Đây là kiểm tra trình duyệt mô phỏng kích thước, chưa kiểm tra thiết bị iOS/Android thật hoặc đo FPS chuyển động.
 

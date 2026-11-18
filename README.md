@@ -2,7 +2,7 @@
 
 > **Lấy cảm hứng thiết kế từ phong cách Editorial Map-First (`Hagiang Wiki - Explore the Loop`)**: Kết hợp trải nghiệm khám phá trực quan qua bản đồ với bộ công cụ quản lý lịch trình, thời tiết khí tượng thời gian thực, sổ chi tiêu tại từng điểm dừng và cấn trừ công nợ dành riêng cho 2 người đồng hành.
 
-Hiện đã triển khai đến **Bước 2.4**: lập lịch dùng chung, OWNER sửa cấu hình chuyến, giảm ngày chuyển điểm về Kho tạm, cảnh báo xung đột version, làm mới thủ công/khi quay lại ứng dụng và xem/mời thành viên từ TopBar. Hướng dẫn chạy và nghiệm thu hiện hành tại [docs/FRONTEND.md](docs/FRONTEND.md), thiết lập PostgreSQL tại [docs/DATABASE.md](docs/DATABASE.md); phần bên dưới giữ bản thiết kế tổng thể. Chạy `npm run dev` từ thư mục gốc. Các lệnh xác minh: `npm run typecheck`, `npm run build`, `npm run test:auth`, `npm run test:stops`, `npm run test:sync`.
+Hiện đã triển khai đến **Bước 3.2**: tab Chi tiêu có ngân sách, quyết toán hai người, thêm/sửa/xóa khoản chi, chuyển trả và ghi nhanh từ Lịch trình, kết nối Expense API bằng BigInt, idempotency và version locking. Hướng dẫn chạy tại [docs/FRONTEND.md](docs/FRONTEND.md), chi tiết giao diện chi tiêu tại [docs/FRONTEND_EXPENSES.md](docs/FRONTEND_EXPENSES.md), PostgreSQL tại [docs/DATABASE.md](docs/DATABASE.md), API tại [docs/API_EXPENSES.md](docs/API_EXPENSES.md); phần bên dưới giữ bản thiết kế tổng thể. Chạy `npm run dev` từ thư mục gốc. Các lệnh xác minh: `npm run typecheck`, `npm run build`, `npm run test:auth`, `npm run test:stops`, `npm run test:sync`, `npm run test:expenses`, `npm run test:expense-ui`.
 
 ---
 
