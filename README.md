@@ -2,6 +2,10 @@
 
 > **Lấy cảm hứng thiết kế từ phong cách Editorial Map-First (`Hagiang Wiki - Explore the Loop`)**: Kết hợp trải nghiệm khám phá trực quan qua bản đồ với bộ công cụ quản lý lịch trình, thời tiết khí tượng thời gian thực, sổ chi tiêu tại từng điểm dừng và cấn trừ công nợ dành riêng cho 2 người đồng hành.
 
+Hiện đã hoàn thành **Bước 3.3 / Mốc M2**: tab Hành lý có checklist cá nhân riêng tư, tích chọn lạc quan, tiến độ, thêm/đổi tên/xóa và bảy gợi ý Hà Giang chống trùng. Mỗi người chỉ truy cập đồ của mình; OWNER không có quyền xem hộ. Không thay đổi schema. Chi tiêu Bước 3.2 tiếp tục hoạt động với BigInt, idempotency và version locking. Hướng dẫn chạy tại [docs/FRONTEND.md](docs/FRONTEND.md), hành trang tại [docs/FRONTEND_PACKING.md](docs/FRONTEND_PACKING.md) và [docs/API_PACKING.md](docs/API_PACKING.md), chi tiêu tại [docs/FRONTEND_EXPENSES.md](docs/FRONTEND_EXPENSES.md), PostgreSQL tại [docs/DATABASE.md](docs/DATABASE.md). Phần dưới giữ thiết kế tổng thể ban đầu; schema và API thực tế trong mã nguồn cùng các tài liệu API chuyên biệt là nguồn hiện hành.
+
+Chạy `npm run dev` từ thư mục gốc. Typecheck/build và **108 kiểm thử** đã đạt: `npm run test:auth`, `npm run test:stops`, `npm run test:sync`, `npm run test:expenses`, `npm run test:expense-ui`, `npm run test:packing`, `npm run test:packing-ui`.
+
 ---
 
 ## 1. Tổng Quan Dự Án (Project Overview)
@@ -21,7 +25,7 @@
 2. **Bản đồ thiếu tính cá nhân hóa**: Các bản đồ số thông thường có quá nhiều chi tiết thừa, trong khi người đi phượt/du lịch thường muốn theo dõi lộ trình trên một sơ đồ vùng hoặc tấm ảnh bản đồ cung đường do chính mình chuẩn bị.
 3. **Bị động trước thời tiết và quãng đường đèo núi**: Không nắm được nhiệt độ, sức gió, độ ẩm theo thời gian thực tại từng điểm dừng và thời gian di chuyển thực tế giữa các chặng.
 4. **Lệch ngân sách và rối rắm khi chia tiền 2 người**: Dự toán một đằng nhưng thực chi một nẻo; quên ghi các khoản tiền lẻ (xăng xe, vé, ăn sáng) ngay tại điểm dừng; cuối chuyến mất nhiều thời gian tính toán xem ai đã ứng bao nhiêu và ai còn nợ ai.
-5. **Chuẩn bị hành lý thiếu sót hoặc trùng lặp**: Không phân biệt rõ đồ dùng chung (ai là người phụ trách mang theo) và đồ dùng cá nhân theo số ngày đi cũng như phương tiện di chuyển.
+5. **Chuẩn bị hành lý thiếu sót**: Mỗi người cần danh sách riêng và tiến độ chuẩn bị rõ ràng, có gợi ý đồ thiết yếu để tránh bỏ quên.
 
 ### 2.2. Giải pháp của sản phẩm
 
@@ -31,7 +35,7 @@ Xây dựng một **All-in-One Travel Web App** giải quyết trọn vẹn 6 nh
 - **Bản đồ lộ trình kép (Wiki Loop Map & Custom Image Map)**: Hiển thị các nhãn đánh số thứ tự (`01`, `02`, `03`...) và vạch nối tuyến đường theo màu sắc từng ngày trực tiếp trên bản đồ phân vùng hoặc trên tấm ảnh bản đồ do người dùng tải lên.
 - **Đồng bộ Thời tiết & Đường đi Realtime**: Chỉ lấy dữ liệu từ các nguồn khí tượng và bản đồ uy tín (**Open-Meteo API** và **OSRM / OpenStreetMap**).
 - **Ghi chi tiêu ngay tại điểm dừng & Tự động quyết toán 2 người**: Đối chiếu trực tiếp *Dự toán* và *Thực chi* tại mỗi điểm dừng; tự động tính số tiền ròng cần chuyển trả giữa 2 người vào cuối chuyến.
-- **Checklist hành lý theo ngữ cảnh**: Tự động gợi ý đồ đạc theo số ngày, phương tiện (*Xe máy / Ô tô / Máy bay*) và tách biệt rõ *Đồ chung* (có người phụ trách) với *Đồ cá nhân*.
+- **Checklist hành trang cá nhân riêng tư**: Mỗi thành viên quản lý balo của chính mình, tích chọn và nạp bảy gợi ý đồ thiết yếu đi Hà Giang. Không chia sẻ danh sách giữa hai người.
 
 ---
 
@@ -54,7 +58,7 @@ Xây dựng một **All-in-One Travel Web App** giải quyết trọn vẹn 6 nh
 ### 3.2. Trang thiết lập: `Create custom tour +` (Studio Lên Kế Hoạch)
 
 - **Phân mục 1 (Gom địa điểm & Xếp thứ tự)**: Biểu mẫu thêm địa điểm mới vào Kho tạm hoặc đưa thẳng vào từng ngày; nút đẩy thứ tự Lên/Xuống giữa các điểm dừng.
-- **Phân mục 2 (Checklist Hành lý)**: Quản lý danh sách đồ dùng chung (gắn tên người mang) và đồ cá nhân của 2 người, kèm nút tự động gợi ý đồ theo số ngày và phương tiện.
+- **Phân mục 2 (Checklist Hành lý)**: Danh sách cá nhân theo phiên đăng nhập, tiến độ chuẩn bị, thêm/đổi tên/xóa đồ và nạp gợi ý Hà Giang; người A không xem hoặc thay đổi được đồ của B.
 - **Phân mục 3 (Cấu hình Chuyến đi)**: Chỉnh sửa tên chuyến đi, số ngày, phương tiện và tổng ngân sách dự kiến.
 
 ---
@@ -161,18 +165,18 @@ model Expense {
   createdAt      DateTime  @default(now())
 }
 
-// 4. Bảng Hành lý (PackingItem)
+// 4. Hành lý cá nhân: trích model hiện có; API luôn ép isShared=false.
 model PackingItem {
-  id             String    @id @default(uuid())
-  tripId         String
-  trip           Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
-  name           String
-  type           String    @default("SHARED") // "SHARED" (Đồ chung) | "PERSONAL" (Đồ cá nhân)
-  category       String?
-  assignedTo     String?   // "userA" | "userB" (Dành cho đồ dùng chung)
-  checked        Boolean   @default(false)    // Trạng thái cho đồ chung
-  checkedA       Boolean   @default(false)    // Trạng thái của Người A cho đồ cá nhân
-  checkedB       Boolean   @default(false)    // Trạng thái của Người B cho đồ cá nhân
+  id                 String   @id @default(cuid())
+  tripId             String
+  title              String
+  isShared           Boolean  @default(false)
+  assignedToMemberId String?
+  isPacked           Boolean  @default(false)
+  version            Int      @default(1)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  // Quan hệ/index đầy đủ: backend/prisma/schema.prisma.
 }
 ```
 
@@ -218,7 +222,7 @@ Kết thúc chuyến đi:
 
 | Phương thức | Endpoint | Mô tả chức năng |
 | :--- | :--- | :--- |
-| `GET` | `/api/trips/:id` | Lấy toàn bộ thông tin chuyến đi kèm danh sách điểm dừng, chi tiêu và hành lý. |
+| `GET` | `/api/trips/:id` | Lấy chuyến đi, thành viên và điểm dừng; chi tiêu/hành trang có API riêng. |
 | `PATCH` | `/api/trips/:id` | Cập nhật cấu hình chuyến đi (tên, số ngày, ngân sách, phương tiện, ảnh bản đồ). |
 | `POST` | `/api/stops` | Thêm địa điểm mới vào Kho tạm (`day = 0`) hoặc gắn thẳng vào một ngày cụ thể. |
 | `PATCH` | `/api/stops/:id` | Cập nhật thông tin địa điểm, đổi ngày, đổi thứ tự (`order`) hoặc cập nhật tọa độ ghim (`mapX`, `mapY`). |
@@ -226,8 +230,11 @@ Kết thúc chuyến đi:
 | `DELETE` | `/api/stops/:id` | Xóa một địa điểm khỏi chuyến đi. |
 | `POST` | `/api/expenses` | Ghi nhanh một khoản thực chi (ăn, xăng, phòng, vé) gắn với điểm dừng và người trả. |
 | `DELETE` | `/api/expenses/:id` | Xóa một khoản chi tiêu đã nhập. |
-| `POST` | `/api/packing` | Thêm một vật dụng mới hoặc khởi tạo danh sách gợi ý theo số ngày & phương tiện. |
-| `PATCH` | `/api/packing/:id` | Đánh dấu hoàn thành (`checked`, `checkedA`, `checkedB`) hoặc đổi người phụ trách. |
+| `GET` | `/api/trips/:tripId/packing` | Chỉ lấy đồ cá nhân và tiến độ của người gọi. |
+| `POST` | `/api/trips/:tripId/packing` | Thêm món đồ vào balo của người gọi. |
+| `PATCH` | `/api/trips/:tripId/packing/:itemId` | Đổi tên hoặc bật/tắt `isPacked` của đồ mình sở hữu. |
+| `DELETE` | `/api/trips/:tripId/packing/:itemId` | Xóa món đồ của mình. |
+| `POST` | `/api/trips/:tripId/packing/templates` | Nạp bảy gợi ý cá nhân, bỏ qua món đã có. |
 
 ---
 

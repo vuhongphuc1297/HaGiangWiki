@@ -84,7 +84,7 @@ Các token mẫu được tạo ngẫu nhiên rồi chỉ lưu SHA-256. Session 
 
 `db:verify` đọc dữ liệu từ database, đối chiếu lịch trình, tiền, hành lý và chạy 13 kiểm tra ràng buộc gồm unique, quan hệ cùng chuyến, số tiền âm, cascade Session và tombstone Stop. Các dữ liệu thử đều được rollback.
 
-Đã có API cấp phiên/mã mời, kiểm tra quyền ACTIVE, giới hạn hai thành viên, tạo/xem chuyến đi, sao chép điểm dừng từ mẫu, thêm/xếp ngày với kiểm tra version và replay idempotency; xem [API_AUTH.md](API_AUTH.md). Frontend hiển thị mẫu chỉ đọc, không đăng nhập bằng User seed. Quyết toán và đồng bộ ngoại tuyến là bước tiếp theo. Bước giao diện không thay đổi schema/migration. Express hiện chuyển BigInt thành chuỗi thập phân bằng JSON replacer để tránh lỗi JSON và mất chính xác.
+Đã có API cấp phiên/mã mời, kiểm tra quyền ACTIVE, giới hạn hai thành viên, tạo/xem chuyến đi, sao chép điểm dừng từ mẫu, thêm/xếp ngày với kiểm tra version và replay idempotency; xem [API_AUTH.md](API_AUTH.md). Backend chi tiêu, chuyển trả và quyết toán hai người đã hoàn thành tại [API_EXPENSES.md](API_EXPENSES.md), giữ nguyên schema/migration. Frontend hiển thị mẫu chỉ đọc, không đăng nhập bằng User seed; đồng bộ ngoại tuyến là bước tiếp theo. Express chuyển BigInt thành chuỗi thập phân bằng JSON replacer để tránh lỗi JSON và mất chính xác.
 
 ## Ghi chú phiên bản
 

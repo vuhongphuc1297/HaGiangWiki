@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Check, LoaderCircle, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { Check, LoaderCircle, Plus, Save, Trash2 } from 'lucide-react';
 import { Sheet } from '../../components/ui/Sheet';
 import { Button } from '../../components/ui/Button';
 import { ErrorNotice } from '../../components/ui/Feedback';
+import { ConflictNotice } from '../../components/ui/ConflictNotice';
 import { api, ApiError, errorMessage } from '../../services/api';
 import type { Stop, Trip } from '../../types/api';
 
@@ -23,13 +24,7 @@ function RequestFailure({ failure, onReload, busy, hasDraft = false }: { failure
   const notice = useRef<HTMLDivElement>(null);
   useEffect(() => { if (failure) notice.current?.scrollIntoView({ block: 'nearest' }); }, [failure]);
   if (!failure) return null;
-  return <div ref={notice}><ErrorNotice>
-    <p>{failure.message}</p>
-    {failure.conflict && onReload && <>
-      <p className="mt-1">Tải dữ liệu mới trước khi tiếp tục.{hasDraft && ' Nội dung đang nhập sẽ được thay bằng bản mới nhất.'}</p>
-      <Button tone="secondary" className="mt-3 w-full" disabled={busy} onClick={onReload}>{busy ? <Spinner /> : <RefreshCw className="size-4" aria-hidden="true" />}Tải lại dữ liệu mới</Button>
-    </>}
-  </ErrorNotice></div>;
+  return <div ref={notice}>{failure.conflict && onReload ? <ConflictNotice subject="điểm dừng" hasDraft={hasDraft} onReload={onReload} busy={busy} /> : <ErrorNotice>{failure.message}</ErrorNotice>}</div>;
 }
 
 export function AddStopModal(props: SavedProps & { initialDay: number }) {

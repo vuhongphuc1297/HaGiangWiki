@@ -5,6 +5,8 @@ import { TripProvider } from './context/TripContext';
 import { HomePage } from './features/itinerary/HomePage';
 import { OnboardingPage } from './features/trip/OnboardingPage';
 import { JoinTripPage } from './features/invite/JoinTripPage';
+import { ExpensesProvider } from './features/expenses/ExpenseContext';
+import { PackingProvider } from './features/packing/PackingContext';
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -13,10 +15,10 @@ function ScrollToTop() {
 }
 
 export default function App() {
-  return <BrowserRouter><TripProvider><ScrollToTop /><MobileContainer><Routes>
+  return <BrowserRouter><TripProvider><ExpensesProvider><PackingProvider><ScrollToTop /><MobileContainer><Routes>
     <Route path="/" element={<HomePage />} />
     <Route path="/onboarding" element={<OnboardingPage />} />
     <Route path="/join/:token" element={<JoinTripPage />} />
     <Route path="*" element={<Navigate to="/" replace />} />
-  </Routes></MobileContainer></TripProvider></BrowserRouter>;
+  </Routes></MobileContainer></PackingProvider></ExpensesProvider></TripProvider></BrowserRouter>;
 }
