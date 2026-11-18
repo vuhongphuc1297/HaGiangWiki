@@ -44,3 +44,12 @@ export type ExpenseSummary = {
   };
 };
 export type ExpenseLedger = { expenses: Expense[]; settlements: SettlementTransfer[]; summary: ExpenseSummary };
+
+export type PackingItem = {
+  id: string; title: string; isPacked: boolean; version: number; createdAt: string; updatedAt: string;
+};
+export type PackingList = {
+  items: PackingItem[];
+  stats: { total: number; packed: number; percentage: number };
+};
+export type PackingTemplateResult = PackingList & { addedCount: number };

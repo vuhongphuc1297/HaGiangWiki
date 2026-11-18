@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty && tsc --noEmit -p tsconfig.test.json",
     "test:sync": "node --experimental-strip-types --test tests/return-sync.test.ts",
-    "test:expense-ui": "node --experimental-strip-types --test tests/expense-form.test.ts"
+    "test:expense-ui": "node --experimental-strip-types --test tests/expense-form.test.ts",
+    "test:packing-ui": "node --experimental-strip-types --test tests/packing-store.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

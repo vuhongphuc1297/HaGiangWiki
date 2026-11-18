@@ -21,7 +21,8 @@
     "test:sync": "npm run test:sync --workspace frontend",
     "test:expenses": "npm run test:expenses --workspace backend",
     "test:expense-ui": "npm run test:expense-ui --workspace frontend",
-    "test:packing": "npm run test:packing --workspace backend"
+    "test:packing": "npm run test:packing --workspace backend",
+    "test:packing-ui": "npm run test:packing-ui --workspace frontend"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"
