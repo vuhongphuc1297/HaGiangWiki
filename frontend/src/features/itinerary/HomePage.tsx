@@ -16,12 +16,22 @@ import { DayTabs } from './DayTabs';
 import { Timeline } from './Timeline';
 import { PlacePool } from './PlacePool';
 import { AddStopModal, AssignStopModal, DeleteStopDialog, DemoStopNotice, EditStopModal } from './StopModals';
-import type { Stop, Trip, TripUpdate } from '../../types/api';
+import { ExpensesPage } from '../expenses/ExpensesPage';
+import { useExpenses } from '../expenses/ExpenseContext';
+import { AddExpenseModal, EditExpenseModal, DeleteExpenseDialog } from '../expenses/ExpenseModals';
+import { SettlementModal, DeleteSettlementDialog } from '../expenses/SettlementModal';
+import type { Expense, ExpenseSummary, SettlementTransfer, Stop, Trip, TripUpdate } from '../../types/api';
 
-type Modal = { kind: 'settings' | 'invite' | 'members' | 'add' | 'demo' } | { kind: 'edit-trip'; trip: Trip } | { kind: 'assign' | 'edit' | 'delete'; trip: Trip; stop: Stop } | null;
+type Modal = { kind: 'settings' | 'invite' | 'members' | 'add' | 'demo' }
+  | { kind: 'edit-trip'; trip: Trip } | { kind: 'assign' | 'edit' | 'delete'; trip: Trip; stop: Stop }
+  | { kind: 'add-expense'; trip: Trip; stop?: Stop }
+  | { kind: 'edit-expense' | 'delete-expense'; trip: Trip; expense: Expense }
+  | { kind: 'settlement'; trip: Trip; summary: ExpenseSummary }
+  | { kind: 'delete-settlement'; trip: Trip; settlement: SettlementTransfer } | null;
 
 export function HomePage() {
   const { user, trip, isDemo, loading, syncing, error, syncError, refresh, applyTrip } = useTrip();
+  const expenses = useExpenses();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [selectedDay, setSelectedDay] = useState(1);
@@ -36,6 +46,16 @@ export function HomePage() {
   const stopModal = modal && 'stop' in modal ? modal : null;
   const openStop = (kind: 'assign' | 'edit' | 'delete', stop: Stop) => { if (trip) setModal(isDemo ? { kind: 'demo' } : { kind, trip, stop }); };
   const refreshStops = async () => { await refresh(trip?.id, { background: true }); };
+  const refreshAll = async () => { await Promise.all([refreshStops(), expenses.refresh()]); };
+  const addExpense = (stop?: Stop) => {
+    if (!trip) return;
+    if (isDemo) { useTemplate(); return; }
+    setModal({ kind: 'add-expense', trip, stop });
+  };
+  const editExpense = (kind: 'edit-expense' | 'delete-expense', expense: Expense) => {
+    if (trip && !isDemo) setModal({ kind, trip, expense });
+  };
+  const reloadExpenses = async () => { setModal(null); await refreshAll(); };
   const reloadEditedData = async () => {
     const tripId = modal && 'trip' in modal ? modal.trip.id : trip?.id;
     setModal(null);
@@ -52,16 +72,16 @@ export function HomePage() {
   useEffect(() => { setModal(null); setNotice(null); }, [trip?.id, user?.id]);
 
   return <>
-    <TopBar members={trip?.members} loading={loading} syncing={syncing} saving={reordering} error={Boolean(error || syncError)} onRefresh={() => { void refreshStops(); }} onSettings={() => setModal({ kind: 'settings' })} onMembers={() => setModal({ kind: 'members' })} />
+    <TopBar members={trip?.members} loading={loading} syncing={syncing || expenses.refreshing} saving={reordering} error={Boolean(error || syncError || expenses.error)} onRefresh={() => { void refreshAll(); }} onSettings={() => setModal({ kind: 'settings' })} onMembers={() => setModal({ kind: 'members' })} />
     {!trip && loading ? <Loading /> : error ? <main className="space-y-4 px-5 py-10"><h1 className="font-serif text-[32px] font-bold leading-tight">Hành trình chờ bạn.</h1><ErrorNotice>{error}</ErrorNotice><Button className="w-full" onClick={() => { void refresh(); }}><RefreshCw className="size-4" aria-hidden="true" />Thử lại</Button><Button tone="secondary" className="w-full" onClick={() => navigate('/onboarding?template=0')}>Tạo chuyến đi mới</Button></main> : trip && <main className="pb-[calc(176px+env(safe-area-inset-bottom))]">
       {syncError && <div className="mx-5 mt-4"><ErrorNotice><p>Chưa thể đồng bộ dữ liệu mới: {syncError}</p><p className="mt-1">Dữ liệu đã tải vẫn được giữ trên màn hình. Bấm Làm mới dữ liệu để thử lại.</p></ErrorNotice></div>}
       {notice?.tripId === trip.id && <div className="mx-5 mt-4 rounded-card border border-state-success/20 bg-accent-soft p-3 text-sm leading-6 text-accent"><div className="flex items-start gap-2"><Check className="mt-1 size-4 shrink-0" aria-hidden="true" /><p role="status" className="min-w-0 flex-1">{notice.message}</p><button type="button" className="icon-button -mr-2 -mt-2 shrink-0" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}><X className="size-4" aria-hidden="true" /></button></div>{notice.moved > 0 && <Button tone="quiet" className="mt-2 w-full text-accent" onClick={() => { navigate('/'); setSelectedDay(0); }}>Xem Kho lưu tạm</Button>}</div>}
       {tab === 'itinerary' ? <>
         {day > 0 && <TripHero trip={trip} isDemo={isDemo} isOwner={Boolean(owner)} onInvite={() => setModal({ kind: 'invite' })} onUseTemplate={useTemplate} />}
         <DayTabs trip={trip} day={day} onChange={setSelectedDay} disabled={reordering || loading} />
-        {day === 0 ? <PlacePool key={trip.id} trip={trip} disabled={loading} onAssign={(stop) => openStop('assign', stop)} onEdit={(stop) => openStop('edit', stop)} onDelete={(stop) => openStop('delete', stop)} /> : <Timeline key={`${trip.id}:${day}`} trip={trip} day={day} isDemo={isDemo} disabled={reordering || loading} onEdit={(stop) => openStop('edit', stop)} onDelete={(stop) => openStop('delete', stop)} onDemo={() => setModal({ kind: 'demo' })} onRefresh={refreshStops} onBusyChange={setReordering} />}
+        {day === 0 ? <PlacePool key={trip.id} trip={trip} disabled={loading} onAssign={(stop) => openStop('assign', stop)} onEdit={(stop) => openStop('edit', stop)} onDelete={(stop) => openStop('delete', stop)} /> : <Timeline key={`${trip.id}:${day}`} trip={trip} day={day} isDemo={isDemo} disabled={reordering || loading} onEdit={(stop) => openStop('edit', stop)} onDelete={(stop) => openStop('delete', stop)} onDemo={() => setModal({ kind: 'demo' })} onAddExpense={addExpense} onRefresh={refreshStops} onBusyChange={setReordering} />}
         <div className="fixed inset-x-0 bottom-[calc(76px+env(safe-area-inset-bottom))] z-30 mx-auto max-w-[420px] border-t border-border-main bg-bg-page px-5 py-3"><Button className="w-full text-base" disabled={reordering || loading} onClick={() => { if (isDemo) useTemplate(); else setModal({ kind: 'add' }); }}><Plus className="size-5" aria-hidden="true" />Thêm địa điểm</Button></div>
-      </> : <Placeholder tab={tab} onItinerary={() => navigate('/')} />}
+      </> : tab === 'expenses' ? <ExpensesPage trip={trip} isDemo={isDemo} onCreate={useTemplate} onAdd={() => addExpense()} onEdit={(expense) => editExpense('edit-expense', expense)} onDelete={(expense) => editExpense('delete-expense', expense)} onSettlement={() => { if (expenses.data) setModal({ kind: 'settlement', trip, summary: expenses.data.summary }); }} onDeleteSettlement={(settlement) => setModal({ kind: 'delete-settlement', trip, settlement })} /> : <Placeholder tab={tab} onItinerary={() => navigate('/')} />}
     </main>}
     <BottomNav active={tab} />
     {modal?.kind === 'members' && trip && <MembersModal trip={trip} currentUserId={user?.id} isOwner={Boolean(owner)} onClose={() => setModal(null)} onInvite={() => { if (owner && trip.members.filter((member) => member.status === 'ACTIVE').length < 2) setModal({ kind: 'invite' }); }} />}
@@ -72,6 +92,11 @@ export function HomePage() {
     {stopModal?.kind === 'assign' && trip && stopModal.trip.id === trip.id && !isDemo && <AssignStopModal trip={stopModal.trip} stop={stopModal.stop} onSaved={afterSaved} onReload={reloadEditedData} onClose={() => setModal(null)} />}
     {stopModal?.kind === 'edit' && trip && stopModal.trip.id === trip.id && !isDemo && <EditStopModal trip={stopModal.trip} stop={stopModal.stop} onSaved={afterSaved} onReload={reloadEditedData} onClose={() => setModal(null)} />}
     {stopModal?.kind === 'delete' && trip && stopModal.trip.id === trip.id && !isDemo && <DeleteStopDialog trip={stopModal.trip} stop={stopModal.stop} onSaved={afterSaved} onReload={reloadEditedData} onClose={() => setModal(null)} />}
+    {modal?.kind === 'add-expense' && trip?.id === modal.trip.id && !isDemo && <AddExpenseModal trip={modal.trip} currentUserId={user?.id} initialStop={modal.stop} onSaved={refreshAll} onClose={() => setModal(null)} />}
+    {modal?.kind === 'edit-expense' && trip?.id === modal.trip.id && !isDemo && <EditExpenseModal trip={modal.trip} expense={modal.expense} currentUserId={user?.id} onSaved={refreshAll} onReload={reloadExpenses} onClose={() => setModal(null)} />}
+    {modal?.kind === 'delete-expense' && trip?.id === modal.trip.id && !isDemo && <DeleteExpenseDialog trip={modal.trip} expense={modal.expense} onSaved={refreshAll} onReload={reloadExpenses} onClose={() => setModal(null)} />}
+    {modal?.kind === 'settlement' && trip?.id === modal.trip.id && !isDemo && <SettlementModal trip={modal.trip} summary={modal.summary} onSaved={refreshAll} onClose={() => setModal(null)} />}
+    {modal?.kind === 'delete-settlement' && trip?.id === modal.trip.id && !isDemo && <DeleteSettlementDialog trip={modal.trip} settlement={modal.settlement} onSaved={refreshAll} onReload={reloadExpenses} onClose={() => setModal(null)} />}
     {modal?.kind === 'demo' && <DemoStopNotice onClose={() => setModal(null)} onCreate={() => { setModal(null); useTemplate(); }} />}
   </>;
 }

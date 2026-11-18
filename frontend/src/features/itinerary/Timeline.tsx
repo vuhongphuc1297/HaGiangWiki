@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Bike, LoaderCircle, MapPin, Pencil, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bike, LoaderCircle, MapPin, Pencil, RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { ErrorNotice } from '../../components/ui/Feedback';
 import { api, errorMessage } from '../../services/api';
@@ -10,10 +10,11 @@ type Direction = 'up' | 'down';
 type Props = {
   trip: Trip; day: number; isDemo: boolean; disabled: boolean;
   onEdit: (stop: Stop) => void; onDelete: (stop: Stop) => void; onDemo: () => void;
+  onAddExpense: (stop: Stop) => void;
   onRefresh: () => Promise<void>; onBusyChange: (busy: boolean) => void;
 };
 
-export function Timeline({ trip, day, isDemo, disabled, onEdit, onDelete, onDemo, onRefresh, onBusyChange }: Props) {
+export function Timeline({ trip, day, isDemo, disabled, onEdit, onDelete, onDemo, onAddExpense, onRefresh, onBusyChange }: Props) {
   const [optimistic, setOptimistic] = useState<{ stops: Stop[]; stopId: string; direction: Direction } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
@@ -72,14 +73,14 @@ export function Timeline({ trip, day, isDemo, disabled, onEdit, onDelete, onDemo
     <p role="status" className="sr-only">{optimistic ? 'Đang lưu thứ tự điểm dừng…' : announcement}</p>
     {error && <div ref={errorNotice} className="mb-4"><ErrorNotice><p>{error}</p><Button tone="secondary" className="mt-3 w-full" disabled={busy} onClick={() => { void reload(); }}>{reloading ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}Tải lại dữ liệu mới</Button></ErrorNotice></div>}
     {stops.length === 0 ? <div className="rounded-card border border-dashed border-border-main px-5 py-8 text-center"><MapPin className="mx-auto mb-3 size-7 text-route" aria-hidden="true" /><h3 className="font-serif text-xl font-semibold">Một ngày để khám phá.</h3><p className="mt-2 text-sm leading-6 text-text-muted">Thêm địa điểm hoặc xếp một điểm từ Kho tạm vào ngày này.</p></div> : <ol className="space-y-4" aria-busy={optimistic !== null}>
-      {stops.map((stop, index) => <TimelineStop key={stop.id} stop={stop} index={index} last={index === stops.length - 1} next={stops[index + 1]} disabled={busy} pendingDirection={optimistic?.stopId === stop.id ? optimistic.direction : undefined} onMove={(direction) => { void move(index, direction); }} onEdit={() => onEdit(stop)} onDelete={() => onDelete(stop)} />)}
+      {stops.map((stop, index) => <TimelineStop key={stop.id} stop={stop} index={index} last={index === stops.length - 1} next={stops[index + 1]} disabled={busy} pendingDirection={optimistic?.stopId === stop.id ? optimistic.direction : undefined} onMove={(direction) => { void move(index, direction); }} onEdit={() => onEdit(stop)} onDelete={() => onDelete(stop)} onAddExpense={() => onAddExpense(stop)} />)}
     </ol>}
   </section>;
 }
 
-function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onMove, onEdit, onDelete }: {
+function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onMove, onEdit, onDelete, onAddExpense }: {
   stop: Stop; index: number; last: boolean; next?: Stop; disabled: boolean; pendingDirection?: Direction;
-  onMove: (direction: Direction) => void; onEdit: () => void; onDelete: () => void;
+  onMove: (direction: Direction) => void; onEdit: () => void; onDelete: () => void; onAddExpense: () => void;
 }) {
   const sampleTravel = stop.name === 'TP. Hà Giang' && next?.name === 'Cổng trời Quản Bạ';
   return <li className="relative pl-11">
@@ -99,7 +100,8 @@ function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onM
       <h3 className="break-words font-serif text-xl font-bold leading-6">{stop.name}</h3>
       {BigInt(stop.estimatedCost) > 0n && <p className="mt-1 text-[11px] leading-5 text-text-muted">Dự toán {money(stop.estimatedCost)}</p>}
       {stop.notes && <p className="mt-1 whitespace-pre-line break-words text-xs leading-5 text-text-muted">{stop.notes}</p>}
-      <div className="mt-3 flex justify-end gap-1 border-t border-border-main/60 pt-1">
+      <div className="mt-3 flex flex-wrap items-center justify-end gap-1 border-t border-border-main/60 pt-1">
+        <button type="button" className="mr-auto inline-flex min-h-11 basis-full items-center gap-1.5 rounded-btn px-2 text-xs font-semibold text-accent hover:bg-accent-soft disabled:opacity-50 min-[375px]:basis-auto" aria-label={`Ghi chi tiêu tại ${stop.name}`} disabled={disabled} onClick={onAddExpense}><Wallet className="size-3.5 shrink-0" aria-hidden="true" />+ Ghi chi tiêu</button>
         <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-btn px-3 text-xs font-medium text-accent hover:bg-accent-soft disabled:opacity-50" aria-label={`Sửa ${stop.name}`} disabled={disabled} onClick={onEdit}><Pencil className="size-3.5" aria-hidden="true" />Sửa</button>
         <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-btn px-3 text-xs font-medium text-state-error hover:bg-state-error/5 disabled:opacity-50" aria-label={`Xóa ${stop.name}`} disabled={disabled} onClick={onDelete}><Trash2 className="size-3.5" aria-hidden="true" />Xóa</button>
       </div>

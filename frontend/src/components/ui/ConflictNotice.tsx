@@ -2,7 +2,7 @@ import { RefreshCw, TriangleAlert } from 'lucide-react';
 import { Button } from './Button';
 
 export function ConflictNotice({ onReload, busy, subject = 'chuyến đi', hasDraft = false }: {
-  onReload: () => void; busy: boolean; subject?: 'chuyến đi' | 'điểm dừng'; hasDraft?: boolean;
+  onReload: () => void; busy: boolean; subject?: 'chuyến đi' | 'điểm dừng' | 'khoản chi' | 'giao dịch chuyển trả'; hasDraft?: boolean;
 }) {
   return <div role="alert" className="rounded-card border border-state-warning/30 bg-state-warning/10 p-4 text-sm leading-6 text-state-warning">
     <div className="flex items-start gap-2"><TriangleAlert className="mt-0.5 size-5 shrink-0" aria-hidden="true" /><h3 className="font-semibold">Dữ liệu vừa được cập nhật trên thiết bị khác</h3></div>
