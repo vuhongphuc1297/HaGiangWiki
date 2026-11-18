@@ -1,6 +1,8 @@
-# HaGiangWiki — Giao diện mobile đến bước 3.2
+# HaGiangWiki — Giao diện mobile đến bước 3.3 / M2
 
 Tab **Chi tiêu** (`/?tab=expenses`) đã hoàn thành Bước 3.2: ngân sách, quyết toán hai người, thêm/sửa/xóa khoản chi, chuyển trả và ghi nhanh tại từng điểm dừng. Hướng dẫn, hành vi đồng bộ và nghiệm thu tại [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md).
+
+Tab **Hành lý** (`/?tab=packing`) hoàn thành Bước 3.3: balo riêng tư theo người đăng nhập, checkbox lạc quan, tiến độ, thêm/đổi tên/xóa và nạp bảy gợi ý Hà Giang chống trùng. Không có danh sách chung hoặc quyền xem hộ của OWNER. Hợp đồng tại [API_PACKING.md](API_PACKING.md), đồng bộ/phục hồi và nghiệm thu 108 kiểm thử M2 tại [FRONTEND_PACKING.md](FRONTEND_PACKING.md).
 
 ## Chạy và thử luồng hai người
 
@@ -69,12 +71,13 @@ Typecheck/build toàn dự án và 64 kiểm tra hồi quy (auth 30, stops 25, s
 - `components/layout/` chứa khung tối đa 420px, TopBar và BottomNav 76px có safe area. `components/ui/` chứa Button, Feedback và Sheet dùng native dialog để giữ focus, Escape và hoàn trả focus.
 - `features/itinerary/` chứa hero, day tabs, timeline, kho/tìm kiếm và form thêm/xếp điểm. `features/trip/` chứa onboarding, lời mời, cài đặt; `features/invite/` chứa preview/join.
 - `features/expenses/` chứa trang ngân sách/công nợ, các modal và context sổ chi tiêu. Dữ liệu tiền từ API được giữ dưới dạng chuỗi, hiển thị/tính phần chia bằng BigInt.
+- `features/packing/` chứa checklist riêng tư, context theo user/trip/member và store kiểm soát cập nhật lạc quan, rollback, version, idempotency và response cũ.
 - Giữ tokens của bản 00: Source Serif 4, Be Vietnam Pro, nền `#F7F3EC`, thẻ `#FFFEFC`, xanh `#28523B`, tuyến cam đất `#A94D2C`, bo góc 10/16/24px. Đối chiếu bố cục bản 01 và 04. Ảnh vùng cao dùng lại asset `tmp/design-prototype-draft-20261111/assets/ha-giang-road.png`, sao chép vào `public/images/`.
 - Các thành phần dùng dữ liệu thật, không tạo GPS giả. Đoạn 46 km/1 giờ 30 của tuyến mẫu có nhãn ước tính tham khảo; chưa gọi dịch vụ định tuyến.
 
 ## Phạm vi và kiểm chứng
 
-Bản đồ và Hành lý hiện là màn hình chờ. Chi tiêu kết nối API Bước 3.1; xem [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md). Chưa có service worker/cache ngoại tuyến, kéo thả hoặc realtime. Các thao tác điểm dừng kết nối API Bước 2.1, có kiểm tra quyền ACTIVE, version cho sửa/xóa/chuyển ngày và Idempotency-Key cho tất cả thao tác ghi.
+Bản đồ hiện là màn hình chờ. Hành lý đã kết nối API riêng tư Bước 3.3; xem [FRONTEND_PACKING.md](FRONTEND_PACKING.md). Chi tiêu kết nối API Bước 3.1; xem [FRONTEND_EXPENSES.md](FRONTEND_EXPENSES.md). Chưa có service worker/cache ngoại tuyến, kéo thả hoặc realtime. Các thao tác điểm dừng kết nối API Bước 2.1, có kiểm tra quyền ACTIVE, version cho sửa/xóa/chuyển ngày và Idempotency-Key cho tất cả thao tác ghi.
 
 Đã thử trên Chromium với viewport 320×844, 390×844 và 1440×900: lịch trình/kho/tìm kiếm, form trống → sửa → gửi thành công, tạo bản sao, thêm điểm, xếp ngày và tải lại giữ dữ liệu; copy lời mời và reset nhãn; người B tham gia/đổi trang; dùng lại mã bị từ chối; đóng sheet bằng Escape trả focus; API ngắt → thông báo lỗi → thử lại phục hồi. Đây là kiểm tra trình duyệt mô phỏng kích thước, chưa kiểm tra thiết bị iOS/Android thật hoặc đo FPS chuyển động.
 
