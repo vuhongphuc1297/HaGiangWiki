@@ -1,0 +1,126 @@
+.trip-map.leaflet-container {
+  background: #eee9de;
+  font-family: inherit;
+}
+
+.trip-map .leaflet-tile-pane {
+  filter: saturate(0.8) sepia(0.1);
+}
+
+.trip-map .leaflet-bar {
+  border: 1px solid #d8d0c2;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(32 40 31 / 12%);
+}
+
+.trip-map .leaflet-bar a {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  background: #fffefc;
+  color: #20281f;
+  font: 600 22px/1 system-ui, sans-serif;
+}
+
+.trip-map .leaflet-bar a:hover,
+.trip-map .leaflet-bar a:focus-visible {
+  background: #edf2e9;
+}
+
+.trip-map .leaflet-bar a.leaflet-disabled {
+  color: #777369;
+}
+
+.trip-map .leaflet-control-attribution {
+  background: #fffefc;
+  color: #20281f;
+  font-size: 10px;
+}
+
+.trip-map-pin {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.trip-map-pin-disc {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid #fffefc;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgb(32 40 31 / 35%);
+  color: #fffefc;
+  font: 700 14px/1 "Source Serif 4", Georgia, serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.trip-map-pin-disc-dark-text {
+  color: #20281f;
+}
+
+.trip-map .leaflet-popup-content-wrapper,
+.trip-map .leaflet-popup-tip {
+  background: #fffefc;
+  color: #20281f;
+}
+
+.trip-map .leaflet-popup-content-wrapper {
+  border-radius: 16px;
+}
+
+.trip-map .leaflet-popup-content {
+  margin: 14px;
+  font-size: 13px;
+}
+
+.trip-map .trip-map-popup {
+  display: grid;
+  min-width: 172px;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.trip-map .trip-map-popup-title {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding-right: 21px;
+  font: 700 19px/1.2 "Source Serif 4", Georgia, serif;
+}
+
+.trip-map-popup-number {
+  flex: none;
+  border-radius: 999px;
+  background: #edf2e9;
+  padding: 3px 6px;
+  color: #28523b;
+  font-size: 13px;
+}
+
+.trip-map .trip-map-popup p {
+  margin: 0;
+  color: #625f54;
+}
+
+.trip-map-popup-notes {
+  max-height: 5.5em;
+  overflow-y: auto;
+  white-space: pre-line;
+}
+
+.trip-map .trip-map-popup-action {
+  min-height: 44px;
+  margin-top: 4px;
+  padding-inline: 10px;
+  border-radius: 10px;
+  background: #28523b;
+  color: #fffefc;
+  font-weight: 600;
+}
+
+.trip-map .trip-map-popup-action:hover {
+  background: #1e402d;
+}

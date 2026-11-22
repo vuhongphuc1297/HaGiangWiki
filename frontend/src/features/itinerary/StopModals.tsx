@@ -31,12 +31,15 @@ export function AddStopModal(props: SavedProps & { initialDay: number }) {
   return <StopEditor {...props} />;
 }
 
-export function EditStopModal(props: ExistingStopProps) {
+export function EditStopModal(props: ExistingStopProps & { focusCoordinates?: boolean }) {
   return <StopEditor {...props} initialDay={props.stop.day} />;
 }
 
-function StopEditor({ trip, initialDay, stop, onSaved, onClose, onReload }: SavedProps & { initialDay: number; stop?: Stop; onReload?: () => Promise<void> }) {
+function StopEditor({ trip, initialDay, stop, onSaved, onClose, onReload, focusCoordinates }: SavedProps & {
+  initialDay: number; stop?: Stop; onReload?: () => Promise<void>; focusCoordinates?: boolean;
+}) {
   const id = useId();
+  const latitudeInput = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(() => ({
     name: stop?.name ?? '', category: stop ? stop.category ?? '' : 'Ngắm cảnh', day: initialDay,
     arriveTime: stop?.arriveTime ?? '', leaveTime: stop?.leaveTime ?? '', cost: stop?.estimatedCost ?? '0',
@@ -49,6 +52,10 @@ function StopEditor({ trip, initialDay, stop, onSaved, onClose, onReload }: Save
   const submitting = useRef(false);
   const request = useRef<{ fingerprint: string; key: string } | null>(null);
   const pending = busy || reloading;
+
+  useEffect(() => {
+    if (focusCoordinates) latitudeInput.current?.focus();
+  }, [focusCoordinates]);
 
   function change(field: keyof Draft, value: string | number) {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -124,7 +131,7 @@ function StopEditor({ trip, initialDay, stop, onSaved, onClose, onReload }: Save
         <fieldset aria-describedby={`${id}-gps-hint`}>
           <legend className="field-label">Tọa độ GPS</legend>
           <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
-            <div className="min-w-0"><label className="mb-2 block text-xs text-text-muted" htmlFor={`${id}-latitude`}>Vĩ độ (Latitude)</label><input {...fieldProps('latitude')} className="field" type="number" inputMode="decimal" step="any" min={-90} max={90} placeholder="Ví dụ: 23.0567" value={draft.latitude} onChange={(event) => change('latitude', event.target.value)} />{fieldError('latitude')}</div>
+            <div className="min-w-0"><label className="mb-2 block text-xs text-text-muted" htmlFor={`${id}-latitude`}>Vĩ độ (Latitude)</label><input ref={latitudeInput} {...fieldProps('latitude')} className="field" type="number" inputMode="decimal" step="any" min={-90} max={90} placeholder="Ví dụ: 23.0567" value={draft.latitude} onChange={(event) => change('latitude', event.target.value)} />{fieldError('latitude')}</div>
             <div className="min-w-0"><label className="mb-2 block text-xs text-text-muted" htmlFor={`${id}-longitude`}>Kinh độ (Longitude)</label><input {...fieldProps('longitude')} className="field" type="number" inputMode="decimal" step="any" min={-180} max={180} placeholder="Ví dụ: 104.9876" value={draft.longitude} onChange={(event) => change('longitude', event.target.value)} />{fieldError('longitude')}</div>
           </div>
           <p id={`${id}-gps-hint`} className="mt-2 text-xs leading-5 text-text-muted">Chưa có GPS? Bạn có thể để trống cả hai ô và bổ sung sau.</p>
