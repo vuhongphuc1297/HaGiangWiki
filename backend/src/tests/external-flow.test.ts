@@ -18,6 +18,8 @@ type RouteBody = Awaited<ReturnType<typeof getRoute>> & {
 
 const weatherPath = '/weather?lat=23.0567&lng=104.9876';
 const quanBaRoute = '/route?fromLat=22.8233&fromLng=104.9836&toLat=23.0567&toLng=104.9876';
+const cityToQuanBa = [[104.9836, 22.8233], [104.955, 22.941], [104.9876, 23.0567]];
+const quanBaToEnd = [[104.9876, 23.0567], [105.08, 23.086], [105.2, 23.1]];
 
 function localDate(daysAhead = 0) {
   return new Date(Date.now() + 7 * 3_600_000 + daysAhead * 86_400_000).toISOString().slice(0, 10);
@@ -36,8 +38,8 @@ function openMeteoFixture() {
   };
 }
 
-function osrmFixture(distance: number, duration: number) {
-  return Response.json({ code: 'Ok', routes: [{ distance, duration }] });
+function osrmFixture(distance: number, duration: number, coordinates: number[][]) {
+  return Response.json({ code: 'Ok', routes: [{ distance, duration, geometry: { type: 'LineString', coordinates } }] });
 }
 
 test('external cache expires entries, bounds its size and shares concurrent loads', async (t) => {
@@ -122,8 +124,11 @@ test('external APIs over HTTP and PostgreSQL', { timeout: 120_000 }, async (t) =
   const weatherCalls: URL[] = [];
   const routeCalls: URL[] = [];
   let respondWeather = (_url: URL): Response => Response.json(openMeteoFixture());
-  let respondRoute = (url: URL, _signal?: AbortSignal | null): Response => url.pathname.endsWith('105.200000,23.100000')
-    ? osrmFixture(39_300, 4500) : osrmFixture(46_200, 5400);
+  let respondRoute = (url: URL, _signal?: AbortSignal | null): Response => {
+    if (url.pathname.endsWith('105.200000,23.100000')) return osrmFixture(39_300, 4500, quanBaToEnd);
+    const coordinates = url.pathname.endsWith('104.983600,22.823300') ? cityToQuanBa.toReversed() : cityToQuanBa;
+    return osrmFixture(46_200, 5400, coordinates);
+  };
 
   const realFetch = globalThis.fetch;
   t.mock.method(globalThis, 'fetch', async (input: string | URL, init?: RequestInit) => {
@@ -216,14 +221,17 @@ test('external APIs over HTTP and PostgreSQL', { timeout: 120_000 }, async (t) =
     assert.deepEqual(first.body, {
       distanceMeters: 46_200, distanceKm: 46.2, durationSeconds: 5400, durationMinutes: 90,
       durationFormatted: '1 giờ 30 phút', isFallback: false, cached: false,
+      coordinates: [[22.8233, 104.9836], [22.941, 104.955], [23.0567, 104.9876]],
     });
     assert.equal(routeCalls[0]?.pathname, '/route/v1/driving/104.983600,22.823300;104.987600,23.056700');
-    assert.equal(routeCalls[0]?.searchParams.get('overview'), 'false');
+    assert.equal(routeCalls[0]?.searchParams.get('overview'), 'simplified');
+    assert.equal(routeCalls[0]?.searchParams.get('geometries'), 'geojson');
     assert.deepEqual((await api(path + '&vehicle=O_TO', owner.cookie)).body, { ...first.body, cached: true });
     assert.equal((await api(path + '&vehicle=XE_MAY', owner.cookie)).body.cached, false);
     const reversed = await api(external + '/route?fromLat=23.0567&fromLng=104.9876&toLat=22.8233&toLng=104.9836', owner.cookie);
     assert.equal(reversed.response.status, 200);
     assert.equal(reversed.body.cached, false);
+    assert.deepEqual(reversed.body.coordinates, [[23.0567, 104.9876], [22.941, 104.955], [22.8233, 104.9836]]);
     assert.equal(routeCalls.length, 3);
   });
 
@@ -231,7 +239,7 @@ test('external APIs over HTTP and PostgreSQL', { timeout: 120_000 }, async (t) =
     const airTrip = await createTrip('MAY_BAY');
     const query = '/route?fromLat=22.8&fromLng=104.98&toLat=22.9&toLng=104.99';
     const original = respondRoute;
-    respondRoute = () => osrmFixture(32_000, 1800);
+    respondRoute = () => osrmFixture(32_000, 1800, [[104.98, 22.8], [104.99, 22.9]]);
     try {
       const path = `/api/trips/${airTrip}/external${query}`;
       const defaultRoute = await api<RouteBody>(path, owner.cookie);
@@ -255,11 +263,12 @@ test('external APIs over HTTP and PostgreSQL', { timeout: 120_000 }, async (t) =
       assert.equal(first.response.status, 200);
       assert.equal(first.body.isFallback, true);
       assert.equal(first.body.cached, false);
+      assert.deepEqual(first.body.coordinates, [[0, 0], [0, 1]]);
       const expectedMeters = 6_371_000 * Math.PI / 180 * 1.45;
       assert.ok(Math.abs(first.body.distanceMeters - expectedMeters) < 1);
       assert.ok(Math.abs(first.body.durationSeconds - expectedMeters * 3.6 / 32) < 1);
 
-      respondRoute = () => Response.json({ code: 'Ok', routes: [] });
+      respondRoute = () => osrmFixture(1000, 100, [[0, 0], [0, 181]]);
       const second = await api(basePath + '&vehicle=XE_MAY', owner.cookie);
       assert.equal(second.response.status, 200);
       assert.deepEqual(second.body, first.body);
@@ -315,18 +324,26 @@ test('external APIs over HTTP and PostgreSQL', { timeout: 120_000 }, async (t) =
     const result = await api(external + '/day-route-summary?day=1', owner.cookie);
     assert.equal(result.response.status, 200);
     assert.deepEqual(result.body, {
-      day: 1, totalDistanceKm: 85.5, totalDurationFormatted: '2 giờ 45 phút',
+      day: 1, totalDistanceKm: 85.5, totalDurationSeconds: 9900, totalDurationFormatted: '2 giờ 45 phút',
       mappedStopsCount: 3, unmappedStopsCount: 2,
       legs: [
-        { fromStopId: city, toStopId: pass, distanceKm: 46.2, durationFormatted: '1 giờ 30 phút' },
-        { fromStopId: pass, toStopId: end, distanceKm: 39.3, durationFormatted: '1 giờ 15 phút' },
+        {
+          fromStopId: city, toStopId: pass, distanceMeters: 46_200, distanceKm: 46.2, durationSeconds: 5400,
+          durationFormatted: '1 giờ 30 phút', isFallback: false,
+          coordinates: [[22.8233, 104.9836], [22.941, 104.955], [23.0567, 104.9876]],
+        },
+        {
+          fromStopId: pass, toStopId: end, distanceMeters: 39_300, distanceKm: 39.3, durationSeconds: 4500,
+          durationFormatted: '1 giờ 15 phút', isFallback: false,
+          coordinates: [[23.0567, 104.9876], [23.086, 105.08], [23.1, 105.2]],
+        },
       ],
     });
     assert.equal(routeCalls.length, callsBefore + 1);
     const second = await api(external + '/day-route-summary?day=2', owner.cookie);
     assert.equal(second.response.status, 200);
     assert.deepEqual(second.body, {
-      day: 2, totalDistanceKm: 0, totalDurationFormatted: '0 phút',
+      day: 2, totalDistanceKm: 0, totalDurationSeconds: 0, totalDurationFormatted: '0 phút',
       mappedStopsCount: 1, unmappedStopsCount: 0, legs: [],
     });
     assert.equal(routeCalls.length, callsBefore + 1);

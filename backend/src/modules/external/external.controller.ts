@@ -61,14 +61,16 @@ export const dayRouteSummary: RequestHandler = async (req, res) => {
     const result = await getRoute(from, to, vehicle);
     return { ...result, fromStopId: from.id, toStopId: to.id };
   }));
+  const totalDurationSeconds = routes.reduce((total, leg) => total + leg.durationSeconds, 0);
   res.json({
     day,
     totalDistanceKm: distanceKm(routes.reduce((total, leg) => total + leg.distanceMeters, 0)),
-    totalDurationFormatted: formatDuration(routes.reduce((total, leg) => total + leg.durationSeconds, 0)),
+    totalDurationSeconds,
+    totalDurationFormatted: formatDuration(totalDurationSeconds),
     mappedStopsCount: mapped.length,
     unmappedStopsCount: trip.stops.length - mapped.length,
-    legs: routes.map(({ fromStopId, toStopId, distanceMeters, durationSeconds }) => ({
-      fromStopId, toStopId, distanceKm: distanceKm(distanceMeters), durationFormatted: formatDuration(durationSeconds),
+    legs: routes.map(({ cached: _cached, ...leg }) => ({
+      ...leg, distanceKm: distanceKm(leg.distanceMeters), durationFormatted: formatDuration(leg.durationSeconds),
     })),
   });
 };

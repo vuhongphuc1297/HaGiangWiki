@@ -4,12 +4,20 @@ import { fetchExternalJson } from './external.fetch.js';
 import type { RoadVehicle } from './external.validation.js';
 
 type Point = { latitude: number; longitude: number };
-type Route = { distanceMeters: number; durationSeconds: number; isFallback: boolean };
+type Coordinate = [latitude: number, longitude: number];
+type Route = { distanceMeters: number; durationSeconds: number; coordinates: Coordinate[]; isFallback: boolean };
 
 const cache = new ExternalCache<Route>(24 * 60 * 60_000);
 const osrmPayload = z.object({
   code: z.literal('Ok'),
-  routes: z.tuple([z.object({ distance: z.number().nonnegative(), duration: z.number().nonnegative() })], z.unknown()),
+  routes: z.tuple([z.object({
+    distance: z.number().nonnegative(),
+    duration: z.number().nonnegative(),
+    geometry: z.object({
+      type: z.literal('LineString'),
+      coordinates: z.array(z.tuple([z.number().min(-180).max(180), z.number().min(-90).max(90)])).min(2),
+    }),
+  })], z.unknown()),
 });
 const mountainSpeeds = { XE_MAY: 32, O_TO: 38 } satisfies Record<RoadVehicle, number>;
 const EARTH_RADIUS_METERS = 6_371_000;
@@ -29,7 +37,12 @@ function estimateRoute(from: Point, to: Point): Route {
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
   const centralAngle = 2 * Math.asin(Math.sqrt(Math.min(1, haversine)));
   const distanceMeters = EARTH_RADIUS_METERS * centralAngle * WINDING_FACTOR;
-  return { distanceMeters, durationSeconds: travelSeconds(distanceMeters, FALLBACK_SPEED_KMH), isFallback: true };
+  return {
+    distanceMeters,
+    durationSeconds: travelSeconds(distanceMeters, FALLBACK_SPEED_KMH),
+    coordinates: [[from.latitude, from.longitude], [to.latitude, to.longitude]],
+    isFallback: true,
+  };
 }
 
 export function getRoute(from: Point, to: Point, vehicle: RoadVehicle) {
@@ -37,12 +50,13 @@ export function getRoute(from: Point, to: Point, vehicle: RoadVehicle) {
   return cache.getOrLoad(key, async () => {
     const fromCoords = `${from.longitude.toFixed(6)},${from.latitude.toFixed(6)}`;
     const toCoords = `${to.longitude.toFixed(6)},${to.latitude.toFixed(6)}`;
-    const url = new URL(`https://router.project-osrm.org/route/v1/driving/${fromCoords};${toCoords}?overview=false`);
+    const url = new URL(`https://router.project-osrm.org/route/v1/driving/${fromCoords};${toCoords}?overview=simplified&geometries=geojson`);
     try {
       const { routes: [route] } = osrmPayload.parse(await fetchExternalJson(url));
       return {
         distanceMeters: route.distance,
         durationSeconds: Math.max(route.duration, travelSeconds(route.distance, mountainSpeeds[vehicle])),
+        coordinates: route.geometry.coordinates.map(([longitude, latitude]): Coordinate => [latitude, longitude]),
         isFallback: false,
       };
     } catch {
