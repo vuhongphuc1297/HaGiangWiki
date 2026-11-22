@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, MapPinOff } from 'lucide-react';
+import { ChevronRight, MapPinOff, Route } from 'lucide-react';
 import type { Stop, Trip } from '../../types/api';
 import { DayFilterPills } from './DayFilterPills';
 import { MapContainer } from './MapContainer';
 import type { MapStop } from './MapContainer';
 import { UnmappedPlacesDrawer } from './UnmappedPlacesDrawer';
+import { formatDistance, formatTravelDuration, useDayRoutes } from '../external/useDayRoutes';
 
 function groupStops(stops: Stop[], durationDays: number) {
   const dayOrder = (day: number) => day === 0 ? durationDays + 1 : day;
@@ -38,6 +39,11 @@ export function MapPage({ trip, isDemo, onSelectStop, onAddCoordinates }: {
   const hasPool = trip.stops.some((stop) => stop.day === 0);
   const activeDay = selectedDay !== null && (selectedDay === 0 ? hasPool : selectedDay <= trip.durationDays) ? selectedDay : null;
   const visible = useMemo(() => activeDay === null ? points : points.filter(({ stop }) => stop.day === activeDay), [points, activeDay]);
+  const { summaries, loading: routesLoading } = useDayRoutes(trip, activeDay, isDemo);
+  const legs = summaries.flatMap((summary) => summary.legs);
+  const fallback = legs.some((leg) => leg.isFallback);
+  const totalKm = legs.reduce((total, leg) => total + leg.distanceMeters, 0) / 1000;
+  const totalSeconds = legs.reduce((total, leg) => total + leg.durationSeconds, 0);
   const filters = [
     { day: null, label: 'Tất cả', count: points.length },
     ...Array.from({ length: trip.durationDays }, (_, index) => ({
@@ -48,7 +54,21 @@ export function MapPage({ trip, isDemo, onSelectStop, onAddCoordinates }: {
 
   return <section className="flex min-h-0 flex-1 flex-col" aria-label="Bản đồ chuyến đi">
     <DayFilterPills filters={filters} activeDay={activeDay} onChange={setSelectedDay} />
-    <MapContainer points={visible} activeDay={activeDay} onSelectStop={onSelectStop} />
+    {activeDay !== 0 && <div role="status" className="flex items-start gap-2 border-b border-border-main bg-surface px-4 py-2 text-xs leading-5">
+      <Route className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+      <div className="min-w-0">
+        <p className="font-semibold text-text-main">
+          <span className="text-accent">{activeDay === null ? 'Toàn tuyến' : `Ngày ${activeDay}`}</span>
+          {routesLoading ? ' · Đang tính đường đi…' : legs.length > 0
+            ? ` · ${formatDistance(totalKm)} · ${formatTravelDuration(totalSeconds)} lái xe` : ' · Chưa đủ điểm GPS để tính đường đi'}
+        </p>
+        <div className="flex flex-wrap gap-x-2">
+          {fallback && <p className="text-state-warning">Nét đứt · Ước tính đường đèo</p>}
+          {summaries.some(({ unmappedStopsCount }) => unmappedStopsCount > 0) && <p className="text-text-muted">Chỉ tính giữa các điểm có GPS</p>}
+        </div>
+      </div>
+    </div>}
+    <MapContainer trip={trip} isDemo={isDemo} points={visible} activeDay={activeDay} summaries={summaries} onSelectStop={onSelectStop} />
     {unmapped.length > 0 && <div className="border-t border-border-main bg-bg-page px-3 py-2">
       <div className="flex items-center gap-2 rounded-card border border-state-warning/20 bg-[#FBEDD2] px-3 text-state-warning">
         <MapPinOff className="size-4 shrink-0" aria-hidden="true" />

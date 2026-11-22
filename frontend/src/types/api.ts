@@ -21,6 +21,19 @@ export type TripSummary = Omit<Trip, 'members' | 'stops'> & {
   membership: { id: string; nickname: string; role: string; status: string };
 };
 export type TripUpdate = Trip & { movedStopsCount: number };
+export type Coordinate = [latitude: number, longitude: number];
+export type RouteLeg = {
+  fromStopId: string; toStopId: string; distanceMeters: number; durationSeconds: number;
+  distanceKm: number; durationFormatted: string; coordinates: Coordinate[]; isFallback: boolean;
+};
+export type DayRouteSummary = {
+  day: number; totalDistanceKm: number; totalDurationSeconds: number; totalDurationFormatted: string;
+  mappedStopsCount: number; unmappedStopsCount: number; legs: RouteLeg[];
+};
+export type WeatherReading = {
+  temperature: number; tempMin: number | null; tempMax: number | null;
+  weatherCode: number; description: string; windSpeed: number | null; isForecast: boolean; notice?: string;
+};
 export type AuthMe = { user: User; trips: TripSummary[] };
 export type Invite = { inviteToken: string; inviteUrl: string; expiresAt: string };
 export type InvitePreview =
