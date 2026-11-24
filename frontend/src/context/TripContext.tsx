@@ -13,6 +13,7 @@ type RefreshOptions = { background?: boolean };
 type TripContextValue = Workspace & {
   isDemo: boolean; refresh: (tripId?: string, options?: RefreshOptions) => Promise<void>;
   applyTrip: (trip: Trip) => void;
+  deleteTrip?: (tripId: string) => Promise<void>;
 };
 const TripContext = createContext<TripContextValue | null>(null);
 const initialWorkspace: Workspace = {
@@ -20,8 +21,12 @@ const initialWorkspace: Workspace = {
   sessionChecked: false, error: null, syncError: null, lastSyncedAt: null,
 };
 
+function tripStorageKey(userId: string) {
+  return `hagiangwiki:trip:${userId}`;
+}
+
 function storedTrip(userId: string): string | null {
-  try { return localStorage.getItem(`hagiangwiki:trip:${userId}`); } catch { return null; }
+  try { return localStorage.getItem(tripStorageKey(userId)); } catch { return null; }
 }
 
 export function TripProvider({ children }: { children: ReactNode }) {
@@ -64,7 +69,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (trip.id !== selected.id || trip.readOnly || !trip.members.some((member) => member.userId === user.id && member.status === 'ACTIVE')) {
         throw new ApiError('Bạn chưa có quyền truy cập chuyến đi này.', 403);
       }
-      try { localStorage.setItem(`hagiangwiki:trip:${user.id}`, trip.id); } catch { /* Storage is optional. */ }
+      try { localStorage.setItem(tripStorageKey(user.id), trip.id); } catch { /* Storage is optional. */ }
       update(() => ({ user, trips, trip, loading: false, syncing: false, sessionChecked: true, error: null, syncError: null, lastSyncedAt: Date.now() }));
     } catch (error) {
       if (requestId === generation.current) update((current) => {
@@ -105,6 +110,25 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }));
   }, [update]);
 
+  const deleteTrip = useCallback(async (tripId: string) => {
+    const user = latest.current.user;
+    if (!user) throw new Error('Yêu cầu đăng nhập hoặc phiên làm việc hợp lệ.');
+    await api<{ success: true; deletedTripId: string }>(`/trips/${encodeURIComponent(tripId)}`, { method: 'DELETE' });
+
+    if (storedTrip(user.id) === tripId) {
+      try { localStorage.removeItem(tripStorageKey(user.id)); } catch { /* Storage is optional. */ }
+    }
+    if (latest.current.user?.id !== user.id) return;
+
+    // Discard the deleted snapshot before refreshing so a failed read cannot restore it.
+    update((current) => {
+      const trips = current.trips.filter((trip) => trip.id !== tripId);
+      if (current.trip?.id !== tripId) return { ...current, trips };
+      return { ...current, trips, trip: null, loading: true, lastSyncedAt: null };
+    });
+    await refresh(latest.current.trip?.id);
+  }, [refresh, update]);
+
   useEffect(() => {
     void refresh();
     return () => { generation.current += 1; ongoing.current = null; };
@@ -114,7 +138,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     void refresh(latest.current.trip?.id, { background: true });
   } }), [refresh]);
 
-  return <TripContext.Provider value={{ ...workspace, isDemo: false, refresh, applyTrip }}>{children}</TripContext.Provider>;
+  return <TripContext.Provider value={{ ...workspace, isDemo: false, refresh, applyTrip, deleteTrip }}>{children}</TripContext.Provider>;
 }
 
 export function DemoTripProvider({ children }: { children: ReactNode }) {
