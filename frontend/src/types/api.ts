@@ -35,7 +35,7 @@ export type WeatherReading = {
   weatherCode: number; description: string; windSpeed: number | null; isForecast: boolean; notice?: string;
 };
 export type AuthMe = { user: User; trips: TripSummary[] };
-export type Invite = { inviteToken: string; inviteUrl: string; expiresAt: string };
+export type Invite = { inviteCode?: string; inviteToken: string; inviteUrl: string; expiresAt: string };
 export type InvitePreview =
   | { valid: true; tripTitle: string; ownerName: string; durationDays: number }
   | { valid: false; message: string };
