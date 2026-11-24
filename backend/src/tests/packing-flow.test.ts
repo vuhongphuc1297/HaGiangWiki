@@ -5,11 +5,12 @@ import type { AddressInfo } from 'node:net';
 import test from 'node:test';
 import { app } from '../app.js';
 import { prisma } from '../config/database.js';
-import { addPackingTemplate, createPacking, deletePacking, listPacking, updatePacking } from '../modules/packing/packing.service.js';
+import { addPackingTemplate, createPacking, createPackingCategory, deletePacking, listPacking, updatePacking } from '../modules/packing/packing.service.js';
 import { packingTitleKey, personalPackingTemplate } from '../modules/packing/packing.templates.js';
 
-type Item = { id: string; title: string; isPacked: boolean; version: number; createdAt: string; updatedAt: string };
-type List = { items: Item[]; stats: { total: number; packed: number; percentage: number }; addedCount?: number };
+type Category = { id: string; name: string };
+type Item = { id: string; title: string; categoryId: string | null; isPacked: boolean; version: number; createdAt: string; updatedAt: string };
+type List = { items: Item[]; categories: Category[]; stats: { total: number; packed: number; percentage: number }; addedCount?: number };
 type Options = { method?: string; cookie?: string; key?: string; body?: unknown };
 
 test('packing template titles are distinct after whitespace/case/Unicode normalization', () => {
@@ -81,6 +82,7 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
   async function snapshot(tripId: string) {
     return {
       items: await prisma.packingItem.findMany({ where: { tripId }, orderBy: { id: 'asc' } }),
+      categories: await prisma.packingCategory.findMany({ where: { member: { tripId } }, orderBy: { id: 'asc' } }),
       trip: await prisma.trip.findUniqueOrThrow({ where: { id: tripId } }),
       records: await prisma.idempotencyRecord.findMany({ where: { tripId }, orderBy: { id: 'asc' } }),
     };
@@ -90,7 +92,7 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
     const trip = await newTrip('isolation');
     const items = await Promise.all(['Bằng lái A', 'Áo len A', 'Kính râm A'].map((title) => add(trip.id, title)));
     assert.deepEqual((await list(trip.id)).items.map((item) => item.title).sort(), ['Bằng lái A', 'Áo len A', 'Kính râm A'].sort());
-    assert.deepEqual(await list(trip.id, b.cookie), { items: [], stats: { total: 0, packed: 0, percentage: 0 } });
+    assert.deepEqual(await list(trip.id, b.cookie), { items: [], categories: [], stats: { total: 0, packed: 0, percentage: 0 } });
     const before = await snapshot(trip.id);
     for (const item of items) {
       for (const method of ['PATCH', 'DELETE']) {
@@ -101,6 +103,77 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
       }
     }
     assert.deepEqual(await snapshot(trip.id), before);
+  });
+
+  await t.test('creates empty personal categories in order and assigns, moves and clears items without losing progress', async () => {
+    const trip = await newTrip('category-crud');
+    const categoryUrl = `${url(trip.id)}/categories`;
+    const key = randomUUID();
+    const request = { method: 'POST', cookie: a.cookie, key, body: { name: '  Quần   áo  '.normalize('NFD') } };
+    const first = await api<{ category: Category }>(categoryUrl, request);
+    assert.equal(first.response.status, 201);
+    const clothes = first.body.category;
+    assert.deepEqual(clothes, { id: clothes.id, name: 'Quần áo' });
+    const replay = await api(categoryUrl, request);
+    assert.equal(replay.response.headers.get('X-Cache'), 'HIT');
+    assert.deepEqual(replay.body, first.body);
+    const second = await api<{ category: Category }>(categoryUrl, { method: 'POST', cookie: a.cookie, body: { name: 'Giấy tờ' } });
+    assert.equal(second.response.status, 201);
+    const papers = second.body.category;
+    assert.deepEqual(await list(trip.id), { categories: [clothes, papers], items: [], stats: { total: 0, packed: 0, percentage: 0 } });
+
+    const plain = await add(trip.id, 'Đồ đang có');
+    assert.equal(plain.categoryId, null);
+    const created = await api<Item>(url(trip.id), { method: 'POST', cookie: a.cookie, body: { title: 'Áo len', categoryId: clothes.id } });
+    assert.equal(created.response.status, 201);
+    assert.equal(created.body.categoryId, clothes.id);
+    const path = `${url(trip.id)}/${created.body.id}`;
+    const checked = await api<Item>(path, { method: 'PATCH', cookie: a.cookie, body: { isPacked: true, version: 1 } });
+    assert.equal(checked.body.categoryId, clothes.id);
+    const moved = await api<Item>(path, { method: 'PATCH', cookie: a.cookie, body: { categoryId: papers.id, version: 2 } });
+    assert.equal(moved.response.status, 200);
+    assert.equal(moved.body.categoryId, papers.id);
+    const stale = await api(path, { method: 'PATCH', cookie: a.cookie, body: { categoryId: null, version: 2 } });
+    assert.equal(stale.response.status, 409);
+    const grouped = await list(trip.id);
+    assert.equal(grouped.items.find((item) => item.id === moved.body.id)?.categoryId, papers.id);
+    assert.deepEqual(grouped.stats, { packed: 1, total: 2, percentage: 50 });
+    const cleared = await api<Item>(path, { method: 'PATCH', cookie: a.cookie, body: { categoryId: null, version: 3 } });
+    assert.equal(cleared.response.status, 200);
+    assert.equal(cleared.body.categoryId, null);
+    assert.equal(cleared.body.isPacked, true);
+  });
+
+  await t.test('category names and assignments are scoped to the authenticated member of the requested trip', async () => {
+    const trip = await newTrip('category-scope');
+    const otherTrip = await newTrip('other-category-scope');
+    const path = `${url(trip.id)}/categories`;
+    const name = 'Đồ điện tử';
+    for (const invalid of ['', '   ', 'a'.repeat(61), null]) {
+      assert.equal((await api(path, { method: 'POST', cookie: a.cookie, body: { name: invalid } })).response.status, 400);
+    }
+    const race = await Promise.all([name, name.toLocaleUpperCase('vi-VN').normalize('NFD')].map((candidate) =>
+      api<{ category: Category }>(path, { method: 'POST', cookie: a.cookie, key: randomUUID(), body: { name: candidate, memberId: trip.memberB } })));
+    assert.deepEqual(race.map((result) => result.response.status).sort(), [201, 409]);
+    const category = race.find((result) => result.response.status === 201)!.body.category;
+    assert.deepEqual((await list(trip.id, b.cookie)).categories, []);
+    assert.deepEqual((await list(otherTrip.id)).categories, []);
+    for (const [tripId, cookie] of [[trip.id, b.cookie], [otherTrip.id, a.cookie]] as const) {
+      const local = await api<{ category: Category }>(`${url(tripId)}/categories`, { method: 'POST', cookie, body: { name } });
+      assert.equal(local.response.status, 201);
+      assert.notEqual(local.body.category.id, category.id);
+      const item = await add(tripId, 'Cáp sạc', cookie);
+      const before = await snapshot(tripId);
+      for (const id of [category.id, 'missing']) {
+        const create = await api(url(tripId), { method: 'POST', cookie, body: { title: 'Điện thoại', categoryId: id } });
+        const move = await api(`${url(tripId)}/${item.id}`, { method: 'PATCH', cookie, body: { categoryId: id } });
+        assert.equal(create.response.status, 404);
+        assert.equal(move.response.status, 404);
+        assert.deepEqual(create.body, { error: 'Không tìm thấy danh mục hành lý.' });
+        assert.deepEqual(move.body, create.body);
+      }
+      assert.deepEqual(await snapshot(tripId), before);
+    }
   });
 
   await t.test('OWNER has no override over B; query/body ownership and sharing fields cannot select another member', async () => {
@@ -181,7 +254,7 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
     assert.deepEqual(await snapshot(trip.id), before);
   });
 
-  await t.test('all five endpoints require a session and ACTIVE membership, including replay after revocation', async () => {
+  await t.test('all packing endpoints require a session and ACTIVE membership, including replay after revocation', async () => {
     const trip = await newTrip('access');
     const item = await add(trip.id, 'Riêng của B', b.cookie);
     const key = randomUUID();
@@ -193,6 +266,7 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
       [url(trip.id), 'GET', undefined], [url(trip.id), 'POST', body],
       [`${url(trip.id)}/${item.id}`, 'PATCH', { isPacked: true }], [`${url(trip.id)}/${item.id}`, 'DELETE', undefined],
       [`${url(trip.id)}/templates`, 'POST', undefined],
+      [`${url(trip.id)}/categories`, 'POST', { name: 'Giấy tờ' }],
     ];
     for (const cookie of [undefined, outsider.cookie, b.cookie]) {
       for (const [path, method, requestBody] of actions) assert.equal((await api(path, { method, cookie, key, body: requestBody })).response.status, cookie ? 403 : 401);
@@ -238,13 +312,16 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
   await t.test('template deduplication normalizes titles and preserves existing packed states and custom items', async () => {
     const trip = await newTrip('dedupe');
     const existing = await add(trip.id, `  ${personalPackingTemplate[0].toLocaleUpperCase('vi-VN').replaceAll(' ', '  ')}  `);
-    await api(`${url(trip.id)}/${existing.id}`, { method: 'PATCH', cookie: a.cookie, body: { isPacked: true } });
+    const category = await createPackingCategory(trip.id, a.id, { name: 'Quần áo' });
+    await api(`${url(trip.id)}/${existing.id}`, { method: 'PATCH', cookie: a.cookie, body: { isPacked: true, categoryId: category.id } });
     const custom = await add(trip.id, 'Máy ảnh riêng');
     const old = await prisma.packingItem.findUniqueOrThrow({ where: { id: existing.id } });
     const result = await api<List>(`${url(trip.id)}/templates`, { method: 'POST', cookie: a.cookie });
     assert.equal(result.body.addedCount, 6);
     assert.equal(result.body.items.length, 8);
     assert.equal(result.body.stats.packed, 1);
+    assert.deepEqual(result.body.categories, [category]);
+    assert.ok(result.body.items.filter((item) => item.id !== existing.id).every((item) => item.categoryId === null));
     assert.deepEqual(await prisma.packingItem.findUniqueOrThrow({ where: { id: existing.id } }), old);
     assert.ok(result.body.items.some((item) => item.id === custom.id));
   });
@@ -308,7 +385,8 @@ test('Personal packing privacy, CRUD, templates and transactions over HTTP/Postg
     const item = await add(trip.id, 'Không được mất');
     const before = await snapshot(trip.id);
     await assert.rejects(prisma.$transaction(async (tx) => {
-      const added = await createPacking(trip.id, a.id, { title: 'Tạo tạm' }, tx);
+      const category = await createPackingCategory(trip.id, a.id, { name: 'Danh mục tạm' }, tx);
+      const added = await createPacking(trip.id, a.id, { title: 'Tạo tạm', categoryId: category.id }, tx);
       await updatePacking(trip.id, a.id, item.id, { title: 'Sửa tạm', isPacked: true, version: 1 }, tx);
       await addPackingTemplate(trip.id, a.id, tx);
       await deletePacking(trip.id, a.id, added.id, {}, tx);

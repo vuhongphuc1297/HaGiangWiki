@@ -1,7 +1,7 @@
 import type { Request, RequestHandler } from 'express';
 import { stringParam } from '../../middlewares/validate.middleware.js';
 import { AUTH_REQUIRED, HttpError } from '../../utils/httpError.js';
-import { createPackingSchema, deletePackingSchema, updatePackingSchema } from './packing.validation.js';
+import { createCategorySchema, createPackingSchema, deletePackingSchema, updatePackingSchema } from './packing.validation.js';
 import * as service from './packing.service.js';
 
 function context(req: Request) {
@@ -16,6 +16,11 @@ export const list: RequestHandler = async (req, res) => {
 export const create: RequestHandler = async (req, res) => {
   const { tripId, userId } = context(req);
   res.status(201).json(await service.createPacking(tripId, userId, createPackingSchema.parse(req.body), req.transaction));
+};
+export const createCategory: RequestHandler = async (req, res) => {
+  const { tripId, userId } = context(req);
+  const category = await service.createPackingCategory(tripId, userId, createCategorySchema.parse(req.body), req.transaction);
+  res.status(201).json({ category });
 };
 export const update: RequestHandler = async (req, res) => {
   const { tripId, userId } = context(req);

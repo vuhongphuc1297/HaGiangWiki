@@ -74,6 +74,7 @@ model TripMember {
   transfersSent     SettlementTransfer[] @relation("TransferSender")
   transfersReceived SettlementTransfer[] @relation("TransferRecipient")
   packingItems      PackingItem[]
+  packingCategories PackingCategory[]
 
   @@unique([tripId, userId])
   // Composite keys let PostgreSQL enforce same-trip references.
@@ -171,6 +172,20 @@ model SettlementTransfer {
   @@index([tripId, toMemberId])
 }
 
+model PackingCategory {
+  id        String   @id @default(cuid())
+  memberId  String
+  name      String
+  nameKey   String
+  createdAt DateTime @default(now())
+
+  member TripMember    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  items  PackingItem[]
+
+  @@unique([memberId, nameKey])
+  @@unique([memberId, id])
+}
+
 model PackingItem {
   id                 String   @id @default(cuid())
   tripId             String
@@ -178,6 +193,7 @@ model PackingItem {
   isShared           Boolean  @default(false)
   // Shared-item carrier or personal-item owner (one row per person).
   assignedToMemberId String?
+  categoryId         String?
   isPacked           Boolean  @default(false)
   version            Int      @default(1)
   createdAt          DateTime @default(now())
@@ -185,6 +201,7 @@ model PackingItem {
 
   trip             Trip        @relation(fields: [tripId], references: [id], onDelete: Cascade)
   assignedToMember TripMember? @relation(fields: [tripId, assignedToMemberId], references: [tripId, id], onDelete: NoAction, onUpdate: NoAction)
+  category         PackingCategory? @relation(fields: [assignedToMemberId, categoryId], references: [memberId, id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([tripId, assignedToMemberId])
 }
