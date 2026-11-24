@@ -35,7 +35,7 @@ export function JoinTripPage() {
     try {
       const result = await api<{ success: true; tripId: string; memberId: string }>(`/invites/${encodeURIComponent(token)}/join`, { method: 'POST', body: { displayName } });
       await refresh(result.tripId);
-      navigate('/', { replace: true });
+      navigate('/trip', { replace: true });
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 400) setPreview({ valid: false, message: reason.message });
       else setError(errorMessage(reason));
