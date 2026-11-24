@@ -4,8 +4,9 @@ Mở `/?tab=packing`. Danh sách hoàn toàn riêng cho người đang đăng nh
 
 - Thẻ tiến độ hiển thị số món đã chuẩn bị/tổng số và phần trăm. Khi mọi món đều đã xếp và danh sách có ít nhất một món, thẻ chuyển nền xanh nhạt và báo “Bạn đã chuẩn bị đầy đủ hành trang lên đường!”. Danh sách rỗng hiển thị 0%, không báo hoàn thành.
 - Checkbox native 24×24px, vùng nhãn chạm tối thiểu 44px. Món chưa xếp có viền đỏ 2px và nền đỏ nhạt, món đã xếp có viền xanh lá 2px và nền xanh nhạt; giữ tên rõ, không gạch ngang hoặc làm mờ. Checkbox vẫn thể hiện trạng thái ngoài màu sắc. Chạm vào nhãn hoặc checkbox đổi dấu tích, màu viền/nền và tính lại tiến độ ngay, rồi PATCH ngầm. Trong lúc lưu khóa thao tác tiếp để tránh gửi version cũ; hàng đang lưu và TopBar báo trạng thái.
-- Ô **Thêm vào balo** nằm trên BottomNav, nhận tên 1–160 ký tự, thêm bằng nút hoặc Enter. Chỉ xóa nội dung sau khi lưu thành công; lỗi giữ nguyên nội dung để thử lại.
-- Bút chì mở form đổi tên; lỗi tên trống focus đúng ô, sửa lại xóa message và `aria-invalid`. Thùng rác mở xác nhận với tên món đồ. Dialog giữ focus, hỗ trợ Escape và chặn đóng khi đang lưu. Xóa thành công cập nhật danh sách/thống kê.
+- **Tạo danh mục** nằm cạnh **Đồ cần mang**. Các danh mục riêng xuất hiện lần lượt bên dưới tiêu đề theo thứ tự tạo, mỗi nhóm có số món riêng. Món cũ và món chưa chọn danh mục nằm ở **Chưa phân loại**.
+- Ô **Thêm vào balo** nhận tên 1–160 ký tự và có ô chọn **Danh mục**. Tạo danh mục thành công sẽ chọn sẵn nhóm đó. Thêm bằng nút hoặc Enter, rồi tiếp tục thêm vào cùng nhóm nếu cần. Lỗi lưu giữ tên món để thử lại.
+- Bút chì mở form sửa tên và chuyển món sang nhóm khác. Chọn **Chưa phân loại** để bỏ danh mục. Thùng rác mở xác nhận với tên món đồ. Dialog giữ focus, hỗ trợ Escape và chặn đóng khi đang lưu. Xóa thành công cập nhật danh sách và thống kê.
 - **Nạp gợi ý đồ phượt Hà Giang** thêm bảy món thiết yếu vào balo của chính người bấm. Nạp lại không tạo trùng, không bỏ dấu tích hoặc sửa đồ đã có. Thông báo nêu số món được thêm.
 
 ## Đồng bộ và phục hồi
@@ -18,7 +19,7 @@ Lỗi mạng khi tích chọn hoàn tác dấu tích và tiến độ, giữ dan
 
 Lỗi 409 hoàn tác dấu tích nếu có, tải lại danh sách và thông báo món đồ đã thay đổi trên thiết bị khác. Form đổi tên/xóa giữ bản nháp, khóa gửi bản cũ và cho chọn **Xem bản mới** để đóng form; mở lại lấy version mới. API chi tiết tại [API_PACKING.md](API_PACKING.md).
 
-## Kết quả nghiệm thu M2
+## Kết quả nghiệm thu M2 trước khi bổ sung danh mục
 
 | Lệnh | Kết quả |
 | --- | --- |
