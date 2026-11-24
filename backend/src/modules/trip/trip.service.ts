@@ -2,6 +2,7 @@ import type { Prisma, User } from '@prisma/client';
 import { prisma } from '../../config/database.js';
 import { inTransaction } from '../../utils/transaction.js';
 import { HttpError, TRIP_ACCESS_DENIED, VersionConflictError } from '../../utils/httpError.js';
+import { DEMO_TRIP_ID } from '../demo/demo.service.js';
 import { nextStopOrder } from '../stop/stop.order.js';
 import { lockTripForMutation } from './trip.lock.js';
 import type { CreateTripInput, UpdateTripInput } from './trip.validation.js';
@@ -86,4 +87,17 @@ export function updateTrip(tripId: string, userId: string, input: UpdateTripInpu
     } });
     return { ...presentTrip(updated), movedStopsCount };
   }, transaction);
+}
+
+export function assertTripCanBeDeleted(tripId: string) {
+  if (tripId === DEMO_TRIP_ID) throw new HttpError(403, 'Không thể xóa lịch trình mẫu.');
+}
+
+export async function deleteTrip(tripId: string, userId: string) {
+  assertTripCanBeDeleted(tripId);
+  return inTransaction(async (tx) => {
+    await lockTripForMutation(tx, tripId, userId, true);
+    await tx.trip.delete({ where: { id: tripId } });
+    return { success: true, deletedTripId: tripId };
+  });
 }

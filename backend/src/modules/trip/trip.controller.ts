@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express';
 import { AUTH_REQUIRED, HttpError } from '../../utils/httpError.js';
 import { stringParam } from '../../middlewares/validate.middleware.js';
 import { createTripSchema, updateTripSchema } from './trip.validation.js';
-import { createTrip, getTrip, updateTrip } from './trip.service.js';
+import { assertTripCanBeDeleted, createTrip, deleteTrip, getTrip, updateTrip } from './trip.service.js';
 
 export const create: RequestHandler = async (req, res) => {
   if (!req.user) throw new HttpError(401, AUTH_REQUIRED);
@@ -18,4 +18,14 @@ export const detail: RequestHandler = async (req, res) => {
 export const update: RequestHandler = async (req, res) => {
   if (!req.user || !req.tripMember) throw new HttpError(401, AUTH_REQUIRED);
   res.json(await updateTrip(req.tripMember.tripId, req.user.id, updateTripSchema.parse(req.body), req.transaction));
+};
+
+export const protectDemoFromDeletion: RequestHandler = (req, _res, next) => {
+  assertTripCanBeDeleted(stringParam(req, 'tripId'));
+  next();
+};
+
+export const remove: RequestHandler = async (req, res) => {
+  if (!req.user || !req.tripMember) throw new HttpError(401, AUTH_REQUIRED);
+  res.status(200).json(await deleteTrip(req.tripMember.tripId, req.user.id));
 };
