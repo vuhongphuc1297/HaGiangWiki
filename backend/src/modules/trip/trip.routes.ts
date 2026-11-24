@@ -9,6 +9,7 @@ import { createInvite } from '../invite/invite.controller.js';
 import { stopRouter } from '../stop/stop.routes.js';
 import { expenseRouter, settlementRouter } from '../expense/expense.routes.js';
 import { packingRouter } from '../packing/packing.routes.js';
+import { externalRouter } from '../external/external.routes.js';
 
 export const tripRouter = Router();
 tripRouter.use(requireAuth);
@@ -20,3 +21,4 @@ tripRouter.use('/:tripId/stops', tripAccess, stopRouter);
 tripRouter.use('/:tripId/expenses', tripAccess, expenseRouter);
 tripRouter.use('/:tripId/settlements', tripAccess, settlementRouter);
 tripRouter.use('/:tripId/packing', tripAccess, packingRouter);
+tripRouter.use('/:tripId/external', tripAccess, externalRouter);

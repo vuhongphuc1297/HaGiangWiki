@@ -2,10 +2,13 @@ import { ArrowRight, CalendarDays, UserPlus } from 'lucide-react';
 import { ROAD_IMAGE } from '../../types/api';
 import type { Trip } from '../../types/api';
 import { dateRange, vehicleNames } from '../../utils/format';
+import { WeatherWidget } from '../external/WeatherWidget';
+import { hasCoordinates } from '../external/useDayRoutes';
 
-export function TripHero({ trip, isDemo, isOwner, onInvite, onUseTemplate }: { trip: Trip; isDemo: boolean; isOwner: boolean; onInvite: () => void; onUseTemplate: () => void }) {
+export function TripHero({ trip, day, isDemo, isOwner, onInvite, onUseTemplate }: { trip: Trip; day: number; isDemo: boolean; isOwner: boolean; onInvite: () => void; onUseTemplate: () => void }) {
   const activeMembers = trip.members.filter((member) => member.status === 'ACTIVE');
   const title = trip.title === 'Hà Giang · Explore the Loop' ? ['Hà Giang', 'Explore the Loop'] : null;
+  const weatherStop = trip.stops.find((stop) => stop.day === day && hasCoordinates(stop));
   return <section aria-label="Chuyến đi hiện tại">
     <div className="relative">
       <img src={ROAD_IMAGE} alt="Cung đèo Hà Giang uốn quanh những dãy núi xanh" fetchPriority="high" className="h-32 w-full object-cover object-right" />
@@ -17,6 +20,9 @@ export function TripHero({ trip, isDemo, isOwner, onInvite, onUseTemplate }: { t
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-muted">
         <p>{trip.durationDays} ngày · {vehicleNames[trip.vehicle]} · {activeMembers.length} người</p>
         <span className="inline-flex items-center gap-1.5 rounded-btn bg-accent-soft px-2 py-1.5 text-accent"><CalendarDays className="size-3.5" aria-hidden="true" />{dateRange(trip.startDate, trip.durationDays)}</span>
+      </div>
+      <div className="mt-3">
+        <WeatherWidget tripId={trip.id} startDate={trip.startDate} stop={weatherStop} isDemo={isDemo} />
       </div>
     </div>
   </section>;

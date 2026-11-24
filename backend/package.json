@@ -16,7 +16,8 @@
     "test:auth": "tsx --test src/tests/auth-flow.test.ts",
     "test:stops": "tsx --test src/tests/stop-flow.test.ts",
     "test:expenses": "tsx --test src/tests/expense-flow.test.ts",
-    "test:packing": "tsx --test src/tests/packing-flow.test.ts"
+    "test:packing": "tsx --test src/tests/packing-flow.test.ts",
+    "test:external": "tsx --test src/tests/external-flow.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

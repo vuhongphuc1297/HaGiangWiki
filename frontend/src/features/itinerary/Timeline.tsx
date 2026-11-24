@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Bike, LoaderCircle, MapPin, Pencil, RefreshCw, Trash2, Wallet } from 'lucide-react';
+import { ArrowDown, ArrowUp, LoaderCircle, MapPin, MapPinOff, Pencil, RefreshCw, Trash2, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { ErrorNotice } from '../../components/ui/Feedback';
 import { api, errorMessage } from '../../services/api';
-import type { Stop, Trip } from '../../types/api';
+import type { RouteLeg, Stop, Trip } from '../../types/api';
 import { money, shortDate } from '../../utils/format';
+import { LegEstimate } from '../external/LegEstimate';
+import { estimateTravelLeg, hasCoordinates, useDayRoutes } from '../external/useDayRoutes';
 
 type Direction = 'up' | 'down';
 type Props = {
@@ -24,6 +26,7 @@ export function Timeline({ trip, day, isDemo, disabled, onEdit, onDelete, onDemo
   const request = useRef<{ fingerprint: string; key: string } | null>(null);
   const stops = optimistic?.stops ?? trip.stops.filter((stop) => stop.day === day);
   const busy = disabled || optimistic !== null || reloading;
+  const { summaries, loading: routesLoading } = useDayRoutes(trip, day, isDemo);
   useEffect(() => { if (error) errorNotice.current?.scrollIntoView({ block: 'nearest' }); }, [error]);
 
   async function move(index: number, direction: Direction) {
@@ -73,18 +76,26 @@ export function Timeline({ trip, day, isDemo, disabled, onEdit, onDelete, onDemo
     <p role="status" className="sr-only">{optimistic ? 'Đang lưu thứ tự điểm dừng…' : announcement}</p>
     {error && <div ref={errorNotice} className="mb-4"><ErrorNotice><p>{error}</p><Button tone="secondary" className="mt-3 w-full" disabled={busy} onClick={() => { void reload(); }}>{reloading ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <RefreshCw className="size-4" aria-hidden="true" />}Tải lại dữ liệu mới</Button></ErrorNotice></div>}
     {stops.length === 0 ? <div className="rounded-card border border-dashed border-border-main px-5 py-8 text-center"><MapPin className="mx-auto mb-3 size-7 text-route" aria-hidden="true" /><h3 className="font-serif text-xl font-semibold">Một ngày để khám phá.</h3><p className="mt-2 text-sm leading-6 text-text-muted">Thêm địa điểm hoặc xếp một điểm từ Kho tạm vào ngày này.</p></div> : <ol className="space-y-4" aria-busy={optimistic !== null}>
-      {stops.map((stop, index) => <TimelineStop key={stop.id} stop={stop} index={index} last={index === stops.length - 1} next={stops[index + 1]} disabled={busy} pendingDirection={optimistic?.stopId === stop.id ? optimistic.direction : undefined} onMove={(direction) => { void move(index, direction); }} onEdit={() => onEdit(stop)} onDelete={() => onDelete(stop)} onAddExpense={() => onAddExpense(stop)} />)}
+      {stops.map((stop, index) => {
+        const next = stops[index + 1];
+        let leg: RouteLeg | undefined;
+        if (next && hasCoordinates(stop) && hasCoordinates(next)) {
+          leg = summaries[0]?.legs.find((route) => route.fromStopId === stop.id && route.toStopId === next.id);
+          if (!leg && (!routesLoading || optimistic)) leg = estimateTravelLeg(stop, next);
+        }
+        return <TimelineStop key={stop.id} stop={stop} index={index} next={next} leg={leg} vehicle={trip.vehicle} disabled={busy} pendingDirection={optimistic?.stopId === stop.id ? optimistic.direction : undefined} onMove={(direction) => { void move(index, direction); }} onEdit={() => onEdit(stop)} onDelete={() => onDelete(stop)} onAddExpense={() => onAddExpense(stop)} />;
+      })}
     </ol>}
   </section>;
 }
 
-function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onMove, onEdit, onDelete, onAddExpense }: {
-  stop: Stop; index: number; last: boolean; next?: Stop; disabled: boolean; pendingDirection?: Direction;
+function TimelineStop({ stop, index, next, leg, vehicle, disabled, pendingDirection, onMove, onEdit, onDelete, onAddExpense }: {
+  stop: Stop; index: number; next?: Stop; leg?: RouteLeg; vehicle: Trip['vehicle']; disabled: boolean; pendingDirection?: Direction;
   onMove: (direction: Direction) => void; onEdit: () => void; onDelete: () => void; onAddExpense: () => void;
 }) {
-  const sampleTravel = stop.name === 'TP. Hà Giang' && next?.name === 'Cổng trời Quản Bạ';
+  const missingGps = next && (!hasCoordinates(stop) || !hasCoordinates(next));
   return <li className="relative pl-11">
-    {!last && <span aria-hidden="true" className="absolute bottom-[-17px] left-[14px] top-7 w-px bg-route/50" />}
+    {next && <span aria-hidden="true" className={`absolute bottom-[-17px] left-[14px] top-7 border-l ${missingGps ? 'border-dashed border-border-main' : 'border-route/50'}`} />}
     <span className="absolute left-0 top-1 flex size-[30px] items-center justify-center rounded-full bg-route text-xs font-medium tabular-nums text-surface">{String(index + 1).padStart(2, '0')}</span>
     <article className="rounded-card border border-border-main bg-surface p-3">
       <div className="mb-1 flex items-start justify-between gap-1">
@@ -94,7 +105,7 @@ function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onM
         </div>
         <div className="-mr-1 -mt-1 flex shrink-0" role="group" aria-label={`Thứ tự ${stop.name}`}>
           <button type="button" className="icon-button disabled:cursor-default" aria-label={`Di chuyển ${stop.name} lên`} title="Di chuyển lên" disabled={disabled || index === 0} onClick={() => onMove('up')}>{pendingDirection === 'up' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUp className="size-4" aria-hidden="true" />}</button>
-          <button type="button" className="icon-button disabled:cursor-default" aria-label={`Di chuyển ${stop.name} xuống`} title="Di chuyển xuống" disabled={disabled || last} onClick={() => onMove('down')}>{pendingDirection === 'down' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowDown className="size-4" aria-hidden="true" />}</button>
+          <button type="button" className="icon-button disabled:cursor-default" aria-label={`Di chuyển ${stop.name} xuống`} title="Di chuyển xuống" disabled={disabled || !next} onClick={() => onMove('down')}>{pendingDirection === 'down' ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowDown className="size-4" aria-hidden="true" />}</button>
         </div>
       </div>
       <h3 className="break-words font-serif text-xl font-bold leading-6">{stop.name}</h3>
@@ -106,6 +117,10 @@ function TimelineStop({ stop, index, last, next, disabled, pendingDirection, onM
         <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-btn px-3 text-xs font-medium text-state-error hover:bg-state-error/5 disabled:opacity-50" aria-label={`Xóa ${stop.name}`} disabled={disabled} onClick={onDelete}><Trash2 className="size-3.5" aria-hidden="true" />Xóa</button>
       </div>
     </article>
-    {sampleTravel && <div className="flex items-start gap-2 pb-1 pt-3 text-[11px] leading-4 text-text-muted"><Bike className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" /><p>46 km · Khoảng 1 giờ 30<span className="block text-[10px] text-text-muted/80">Ước tính tham khảo theo lịch trình mẫu</span></p></div>}
+    {next && <div className="px-1 pt-2.5" role="group" aria-label={`Di chuyển đến ${next.name}`}>
+      {leg ? <LegEstimate leg={leg} vehicle={vehicle} /> : missingGps ? <p className="flex items-center gap-2 text-xs leading-5 text-text-muted">
+        <MapPinOff className="size-4 shrink-0" aria-hidden="true" />Chưa có ước tính (Thiếu tọa độ GPS)
+      </p> : <p className="text-xs leading-5 text-text-muted">Đang tính quãng đường…</p>}
+    </div>}
   </li>;
 }
