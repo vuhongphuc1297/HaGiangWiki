@@ -6,6 +6,7 @@ import { emptyPackingState, PackingStore } from './packing.store';
 
 type PackingContextValue = ReturnType<PackingStore['getSnapshot']> & {
   refresh: PackingStore['refresh']; add: PackingStore['add']; toggle: PackingStore['toggle'];
+  createCategory: PackingStore['createCategory'];
   rename: PackingStore['rename']; remove: PackingStore['remove']; templates: PackingStore['templates'];
 };
 const PackingContext = createContext<PackingContextValue | null>(null);
@@ -22,7 +23,7 @@ export function PackingProvider({ children }: { children: ReactNode }) {
   // Mask the previous account's list immediately, before scope effects execute.
   const visible = state.scope === scope ? state : { ...emptyPackingState, loading: scope !== null };
   return <PackingContext.Provider value={{ ...visible, refresh: store.refresh, add: store.add, toggle: store.toggle,
-    rename: store.rename, remove: store.remove, templates: store.templates }}>{children}</PackingContext.Provider>;
+    createCategory: store.createCategory, rename: store.rename, remove: store.remove, templates: store.templates }}>{children}</PackingContext.Provider>;
 }
 
 export function usePacking() {
