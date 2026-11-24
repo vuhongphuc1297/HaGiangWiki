@@ -5,9 +5,10 @@ import { inTransaction } from '../../utils/transaction.js';
 import { HttpError, TRIP_ACCESS_DENIED, VersionConflictError } from '../../utils/httpError.js';
 import { lockTripForMutation } from '../trip/trip.lock.js';
 import { packingTitleKey, personalPackingTemplate } from './packing.templates.js';
-import type { CreatePackingInput, DeletePackingInput, UpdatePackingInput } from './packing.validation.js';
+import type { CreateCategoryInput, CreatePackingInput, DeletePackingInput, UpdatePackingInput } from './packing.validation.js';
 
-const itemSelection = { id: true, title: true, isPacked: true, version: true, createdAt: true, updatedAt: true } satisfies Prisma.PackingItemSelect;
+const itemSelection = { id: true, title: true, categoryId: true, isPacked: true, version: true, createdAt: true, updatedAt: true } satisfies Prisma.PackingItemSelect;
+const categorySelection = { id: true, name: true } satisfies Prisma.PackingCategorySelect;
 
 async function currentMember(tx: Prisma.TransactionClient, tripId: string, userId: string, lock = false) {
   if (lock) {
@@ -26,8 +27,11 @@ async function privateList(tx: Prisma.TransactionClient, tripId: string, memberI
     where: { tripId, assignedToMemberId: memberId, isShared: false },
     select: itemSelection, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
+  const categories = await tx.packingCategory.findMany({
+    where: { memberId }, select: categorySelection, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
   const packed = items.filter((item) => item.isPacked).length;
-  return { items, stats: { total: items.length, packed, percentage: items.length ? Math.round(packed * 100 / items.length) : 0 } };
+  return { items, categories, stats: { total: items.length, packed, percentage: items.length ? Math.round(packed * 100 / items.length) : 0 } };
 }
 
 async function ownItem(tx: Prisma.TransactionClient, tripId: string, memberId: string, itemId: string, version?: number) {
@@ -48,11 +52,30 @@ export function listPacking(tripId: string, userId: string) {
   }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
 }
 
+export function createPackingCategory(tripId: string, userId: string, input: CreateCategoryInput, transaction?: Prisma.TransactionClient) {
+  return inTransaction(async (tx) => {
+    const member = await currentMember(tx, tripId, userId, true);
+    const [category] = await tx.packingCategory.createManyAndReturn({
+      data: [{ memberId: member.id, name: input.name, nameKey: packingTitleKey(input.name) }],
+      skipDuplicates: true, select: categorySelection,
+    });
+    if (!category) throw new HttpError(409, 'Bạn đã có danh mục hành lý với tên này.');
+    return category;
+  }, transaction);
+}
+
+async function checkCategory(tx: Prisma.TransactionClient, memberId: string, categoryId: string | null | undefined) {
+  if (categoryId == null) return;
+  const category = await tx.packingCategory.findUnique({ where: { memberId_id: { memberId, id: categoryId } }, select: { id: true } });
+  if (!category) throw new HttpError(404, 'Không tìm thấy danh mục hành lý.');
+}
+
 export function createPacking(tripId: string, userId: string, input: CreatePackingInput, transaction?: Prisma.TransactionClient) {
   return inTransaction(async (tx) => {
     const member = await currentMember(tx, tripId, userId, true);
+    await checkCategory(tx, member.id, input.categoryId);
     return tx.packingItem.create({ data: {
-      tripId, title: input.title, isShared: false, assignedToMemberId: member.id, isPacked: false,
+      tripId, title: input.title, categoryId: input.categoryId, isShared: false, assignedToMemberId: member.id, isPacked: false,
     }, select: itemSelection });
   }, transaction);
 }
@@ -61,9 +84,11 @@ export function updatePacking(tripId: string, userId: string, itemId: string, in
   return inTransaction(async (tx) => {
     const member = await currentMember(tx, tripId, userId, true);
     await ownItem(tx, tripId, member.id, itemId, input.version);
+    await checkCategory(tx, member.id, input.categoryId);
     return tx.packingItem.update({ where: { id: itemId }, data: {
       ...(input.title === undefined ? {} : { title: input.title }),
       ...(input.isPacked === undefined ? {} : { isPacked: input.isPacked }),
+      categoryId: input.categoryId,
       version: { increment: 1 },
     }, select: itemSelection });
   }, transaction);

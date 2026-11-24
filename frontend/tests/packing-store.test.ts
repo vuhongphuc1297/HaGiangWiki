@@ -3,9 +3,10 @@ import test from 'node:test';
 import { PackingStore } from '../src/features/packing/packing.store.ts';
 import type { PackingItem, PackingList } from '../src/types/api.ts';
 
-const item: PackingItem = { id: 'a1', title: 'Bằng lái A', isPacked: false, version: 1, createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:00Z' };
-const initial: PackingList = { items: [item], stats: { total: 1, packed: 0, percentage: 0 } };
-const empty: PackingList = { items: [], stats: { total: 0, packed: 0, percentage: 0 } };
+const papers = { id: 'cat1', name: 'Giấy tờ' };
+const item: PackingItem = { id: 'a1', title: 'Bằng lái A', categoryId: null, isPacked: false, version: 1, createdAt: '2026-11-20T00:00:00Z', updatedAt: '2026-11-20T00:00:00Z' };
+const initial: PackingList = { items: [item], categories: [papers], stats: { total: 1, packed: 0, percentage: 0 } };
+const empty: PackingList = { items: [], categories: [], stats: { total: 0, packed: 0, percentage: 0 } };
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
@@ -30,6 +31,7 @@ test('checkbox and progress change before HTTP completes; a second tap cannot en
   const f = fixture(); await f.load();
   const save = f.store.toggle(item.id);
   assert.equal(f.store.getSnapshot().data?.items[0]?.isPacked, true);
+  assert.deepEqual(f.store.getSnapshot().data?.categories, [papers]);
   assert.deepEqual(f.store.getSnapshot().data?.stats, { total: 1, packed: 1, percentage: 100 });
   assert.equal(f.store.getSnapshot().busy, true);
   assert.equal(await f.store.toggle(item.id), false);
@@ -74,7 +76,7 @@ test('refresh during save waits for commit and cannot fetch the old snapshot', a
   f.last().reply.resolve(packed);
   await new Promise<void>((resolve) => setImmediate(resolve));
   assert.equal(f.requests.length, 3);
-  f.last().reply.resolve({ items: [packed], stats: { total: 1, packed: 1, percentage: 100 } });
+  f.last().reply.resolve({ ...initial, items: [packed], stats: { total: 1, packed: 1, percentage: 100 } });
   await save;
   assert.equal(f.store.getSnapshot().data?.stats.packed, 1);
 });
@@ -140,4 +142,73 @@ test('ambiguous create retry after reload upserts the replayed ID instead of dup
   assert.equal(f.last().options?.headers?.['Idempotency-Key'], key);
   f.last().reply.resolve(item); await retry;
   assert.equal(f.store.getSnapshot().data?.items.length, 1);
+});
+
+test('creating a category returns it to the form and does not count it as an item', async () => {
+  const f = fixture(); await f.load(empty);
+  const create = f.store.createCategory('  Giấy tờ  ');
+  assert.equal(f.last().path, '/trips/trip/packing/categories');
+  assert.deepEqual(f.last().options?.body, { name: papers.name });
+  f.last().reply.resolve({ category: papers });
+  assert.deepEqual(await create, papers);
+  assert.deepEqual(f.store.getSnapshot().data, { ...empty, categories: [papers] });
+});
+
+test('an ambiguous category creation can be retried after a refresh without duplicating the group', async () => {
+  const f = fixture(); await f.load(empty);
+  const first = f.store.createCategory(papers.name);
+  const key = f.last().options?.headers?.['Idempotency-Key'];
+  f.last().reply.reject(failure(0));
+  assert.equal(await first, null);
+  await f.load(initial);
+  const retry = f.store.createCategory(papers.name);
+  assert.equal(f.last().options?.headers?.['Idempotency-Key'], key);
+  f.last().reply.resolve({ category: papers });
+  assert.deepEqual(await retry, papers);
+  assert.deepEqual(f.store.getSnapshot().data, initial);
+});
+
+test('duplicate category errors reach the form without triggering item-version recovery', async () => {
+  const f = fixture(); await f.load();
+  const create = f.store.createCategory(papers.name);
+  const message = 'Danh mục này đã tồn tại.';
+  f.last().reply.reject(Object.assign(new Error(message), { status: 409 }));
+  assert.equal(await create, null);
+  assert.equal(f.store.getSnapshot().notice, null);
+  assert.equal(f.store.getSnapshot().error, message);
+  assert.deepEqual(f.store.getSnapshot().data, initial);
+});
+
+test('a category creation cannot repopulate the form after the user has switched accounts', async () => {
+  const f = fixture(); await f.load(empty);
+  const create = f.store.createCategory(papers.name);
+  const pending = f.last();
+  f.store.setScope('B:trip:memberB', 'trip');
+  await f.load(empty);
+  pending.reply.resolve({ category: papers });
+  assert.equal(await create, null);
+  assert.deepEqual(f.store.getSnapshot().data, empty);
+});
+
+test('the item form sends the selected category and can move an item back to uncategorized', async () => {
+  const f = fixture(); await f.load({ ...empty, categories: [papers] });
+  const add = f.store.add(item.title, papers.id);
+  assert.deepEqual(f.last().options?.body, { title: item.title, categoryId: papers.id });
+  const categorized = { ...item, categoryId: papers.id };
+  f.last().reply.resolve(categorized);
+  assert.equal(await add, true);
+  assert.deepEqual(f.store.getSnapshot().data, { ...initial, items: [categorized] });
+  const edit = f.store.rename(categorized, item.title, null);
+  assert.deepEqual(f.last().options?.body, { title: item.title, categoryId: null, version: 1 });
+  f.last().reply.resolve({ ...item, version: 2 });
+  assert.equal(await edit, true);
+  assert.deepEqual(f.store.getSnapshot().data, { ...initial, items: [{ ...item, version: 2 }] });
+});
+
+test('template import uses the server snapshot including empty categories from another device', async () => {
+  const f = fixture(); await f.load(empty);
+  const save = f.store.templates();
+  f.last().reply.resolve({ ...initial, addedCount: 1 });
+  assert.equal(await save, true);
+  assert.deepEqual(f.store.getSnapshot().data, initial);
 });
