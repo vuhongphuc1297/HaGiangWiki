@@ -23,7 +23,8 @@
     "test:expense-ui": "npm run test:expense-ui --workspace frontend",
     "test:packing": "npm run test:packing --workspace backend",
     "test:packing-ui": "npm run test:packing-ui --workspace frontend",
-    "test:external": "npm run test:external --workspace backend"
+    "test:external": "npm run test:external --workspace backend",
+    "test:landing": "npm run test:landing --workspace frontend"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"

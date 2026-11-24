@@ -20,7 +20,7 @@ export function OnboardingPage() {
   const [days, setDays] = useState(3);
   const [vehicle, setVehicle] = useState('XE_MAY');
   const [budget, setBudget] = useState('5000000');
-  const [useTemplate, setUseTemplate] = useState(params.get('template') !== '0');
+  const [useTemplate, setUseTemplate] = useState(params.get('template') === '1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const request = useRef<{ fingerprint: string; key: string } | null>(null);
@@ -40,13 +40,13 @@ export function OnboardingPage() {
       await ensureSession(user?.displayName ?? name.trim());
       const created = await api<{ id: string }>('/trips', { method: 'POST', body, headers: { 'Idempotency-Key': request.current!.key } });
       await refresh(created.id);
-      navigate('/', { replace: true });
+      navigate('/trip', { replace: true });
     } catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
 
   return <div className="pb-8">
-    <header className="flex min-h-16 items-center gap-2 border-b border-border-main bg-surface px-3 pt-[env(safe-area-inset-top)]"><Link to="/" aria-label="Về lịch trình" className="icon-button"><ArrowLeft className="size-5" aria-hidden="true" /></Link><span className="font-serif text-xl font-bold text-accent">HaGiangWiki</span></header>
+    <header className="flex min-h-16 items-center gap-2 border-b border-border-main bg-surface px-3 pt-[env(safe-area-inset-top)]"><Link to="/" aria-label="Về trang chủ" className="icon-button"><ArrowLeft className="size-5" aria-hidden="true" /></Link><span className="font-serif text-xl font-bold text-accent">HaGiangWiki</span></header>
     <img src={ROAD_IMAGE} alt="Đường lên vùng cao Hà Giang" className="h-36 w-full object-cover" />
     <main className="px-5 pt-6">
       <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-route">Một hành trình. Hai người đồng hành.</p>

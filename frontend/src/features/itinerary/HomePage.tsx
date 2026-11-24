@@ -54,7 +54,7 @@ export function HomePage() {
   };
   const selectMappedStop = useCallback((stop: Stop) => {
     setSelectedDay(stop.day);
-    navigate('/?tab=itinerary');
+    navigate({ search: '?tab=itinerary' });
   }, [navigate]);
   const refreshStops = async () => { await refresh(trip?.id, { background: true }); };
   const refreshAll = async () => { await Promise.all([refreshStops(), expenses.refresh(), packing.refresh()]); };
@@ -83,12 +83,12 @@ export function HomePage() {
   useEffect(() => { setModal(null); setNotice(null); }, [trip?.id, user?.id]);
 
   return <>
-    <TopBar members={trip?.members} loading={loading} syncing={syncing || expenses.refreshing || packing.refreshing} saving={reordering || packing.busy} error={Boolean(error || syncError || expenses.error || packing.error)} onRefresh={() => { void refreshAll(); }} onSettings={() => setModal({ kind: 'settings' })} onMembers={() => setModal({ kind: 'members' })} />
+    <TopBar members={isDemo ? undefined : trip?.members} loading={loading} syncing={syncing || expenses.refreshing || packing.refreshing} saving={reordering || packing.busy} error={Boolean(error || syncError || expenses.error || packing.error)} onRefresh={() => { void refreshAll(); }} onSettings={() => setModal({ kind: 'settings' })} onMembers={() => setModal({ kind: 'members' })} />
     {!trip && loading ? <Loading /> : error ? <main className="space-y-4 px-5 py-10"><h1 className="font-serif text-[32px] font-bold leading-tight">Hành trình chờ bạn.</h1><ErrorNotice>{error}</ErrorNotice><Button className="w-full" onClick={() => { void refresh(); }}><RefreshCw className="size-4" aria-hidden="true" />Thử lại</Button><Button tone="secondary" className="w-full" onClick={() => navigate('/onboarding?template=0')}>Tạo chuyến đi mới</Button></main> : trip && <main className={tab === 'map'
       ? 'flex h-[calc(100dvh-142px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col'
       : 'pb-[calc(176px+env(safe-area-inset-bottom))]'}>
       {syncError && <div className="mx-5 mt-4"><ErrorNotice><p>Chưa thể đồng bộ dữ liệu mới: {syncError}</p><p className="mt-1">Dữ liệu đã tải vẫn được giữ trên màn hình. Bấm Làm mới dữ liệu để thử lại.</p></ErrorNotice></div>}
-      {notice?.tripId === trip.id && <div className="mx-5 mt-4 rounded-card border border-state-success/20 bg-accent-soft p-3 text-sm leading-6 text-accent"><div className="flex items-start gap-2"><Check className="mt-1 size-4 shrink-0" aria-hidden="true" /><p role="status" className="min-w-0 flex-1">{notice.message}</p><button type="button" className="icon-button -mr-2 -mt-2 shrink-0" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}><X className="size-4" aria-hidden="true" /></button></div>{notice.moved > 0 && <Button tone="quiet" className="mt-2 w-full text-accent" onClick={() => { navigate('/'); setSelectedDay(0); }}>Xem Kho lưu tạm</Button>}</div>}
+      {notice?.tripId === trip.id && <div className="mx-5 mt-4 rounded-card border border-state-success/20 bg-accent-soft p-3 text-sm leading-6 text-accent"><div className="flex items-start gap-2"><Check className="mt-1 size-4 shrink-0" aria-hidden="true" /><p role="status" className="min-w-0 flex-1">{notice.message}</p><button type="button" className="icon-button -mr-2 -mt-2 shrink-0" aria-label="Ẩn thông báo" onClick={() => setNotice(null)}><X className="size-4" aria-hidden="true" /></button></div>{notice.moved > 0 && <Button tone="quiet" className="mt-2 w-full text-accent" onClick={() => { navigate({ search: '?tab=itinerary' }); setSelectedDay(0); }}>Xem Kho lưu tạm</Button>}</div>}
       {tab === 'itinerary' ? <>
         {day > 0 && <TripHero trip={trip} day={day} isDemo={isDemo} isOwner={Boolean(owner)} onInvite={() => setModal({ kind: 'invite' })} onUseTemplate={useTemplate} />}
         <DayTabs trip={trip} day={day} onChange={setSelectedDay} disabled={reordering || loading} />
