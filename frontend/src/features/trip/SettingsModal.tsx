@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, Eye, LogOut, Pencil, Plus, UserPlus } from 'lucide-react';
+import { useId, useRef, useState } from 'react';
+import { Check, Eye, LoaderCircle, LogOut, Pencil, Plus, Trash2, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet } from '../../components/ui/Sheet';
 import { Button } from '../../components/ui/Button';
@@ -9,10 +9,15 @@ import { api, errorMessage } from '../../services/api';
 import { dateRange, money, vehicleNames } from '../../utils/format';
 
 export function SettingsModal({ onClose, onInvite, onEditTrip }: { onClose: () => void; onInvite?: () => void; onEditTrip?: () => void }) {
-  const { user, trip, trips, isDemo, refresh } = useTrip();
+  const { user, trip, trips, isDemo, refresh, deleteTrip } = useTrip();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const deleteButton = useRef<HTMLButtonElement>(null);
+  const descriptionId = useId();
   const owner = !isDemo && trip?.members.some((member) => member.userId === user?.id && member.status === 'ACTIVE' && member.role === 'OWNER');
   async function logout() {
     setBusy(true);
@@ -20,6 +25,38 @@ export function SettingsModal({ onClose, onInvite, onEditTrip }: { onClose: () =
     catch (reason) { setError(errorMessage(reason)); }
     finally { setBusy(false); }
   }
+
+  function cancelDeletion() {
+    setConfirmingDelete(false);
+    setDeleteError(null);
+    requestAnimationFrame(() => deleteButton.current?.focus());
+  }
+
+  async function removeTrip() {
+    if (!trip || !owner || !deleteTrip || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteTrip(trip.id);
+      onClose();
+    } catch (reason) { setDeleteError(errorMessage(reason)); }
+    finally { setDeleting(false); }
+  }
+
+  if (owner && trip && confirmingDelete) {
+    return <Sheet open variant="dialog" title="Xóa chuyến đi?" describedBy={descriptionId} busy={deleting} onClose={cancelDeletion}>
+      <p id={descriptionId} className="mb-4 break-words text-sm leading-7">Chuyến đi <strong>{trip.title}</strong> cùng toàn bộ lịch trình, các khoản chi tiêu và danh sách hành lý sẽ bị xóa vĩnh viễn. Thao tác này không thể hoàn tác.</p>
+      {deleteError && <div className="mb-4"><ErrorNotice>{deleteError}</ErrorNotice></div>}
+      <div className="flex flex-wrap justify-end gap-3">
+        <Button autoFocus tone="secondary" disabled={deleting} onClick={cancelDeletion}>Hủy</Button>
+        <Button tone="danger" disabled={deleting} onClick={() => { void removeTrip(); }}>
+          {deleting && <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+          {deleting ? 'Đang xóa…' : 'Xóa vĩnh viễn'}
+        </Button>
+      </div>
+    </Sheet>;
+  }
+
   return <Sheet open title="Chuyến đi của bạn" onClose={onClose} busy={busy}>
     {trip && <div className="mb-5 rounded-card border border-border-main bg-bg-page p-4">
       <p className="font-serif text-xl font-bold">{trip.title}</p>
@@ -34,5 +71,6 @@ export function SettingsModal({ onClose, onInvite, onEditTrip }: { onClose: () =
     {onInvite && <Button tone="secondary" className="mb-2 w-full" disabled={busy} onClick={onInvite}><UserPlus className="size-4" aria-hidden="true" />Mời người đồng hành</Button>}
     <Button tone={owner ? 'secondary' : 'primary'} className="mt-3 w-full" disabled={busy} onClick={() => { onClose(); navigate('/onboarding?template=1'); }}><Plus className="size-5" aria-hidden="true" />{isDemo ? 'Tạo chuyến đi của bạn' : 'Tạo chuyến đi mới'}</Button>
     {user && <Button tone="quiet" disabled={busy} className="mt-2 w-full" onClick={() => { void logout(); }}><LogOut className="size-4" aria-hidden="true" />{busy ? 'Đang đăng xuất…' : 'Đăng xuất'}</Button>}
+    {owner && trip && <button ref={deleteButton} type="button" disabled={busy} className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-btn px-4 py-3 text-sm font-semibold text-state-error hover:bg-state-error/10 disabled:opacity-60" onClick={() => setConfirmingDelete(true)}><Trash2 className="size-4" aria-hidden="true" />Xóa chuyến đi này</button>}
   </Sheet>;
 }

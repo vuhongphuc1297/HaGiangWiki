@@ -15,6 +15,7 @@ import { bigintJsonReplacer } from '../utils/bigint.js';
 import { generateInviteCode, generateRandomToken, hashToken } from '../utils/crypto.js';
 import { HttpError } from '../utils/httpError.js';
 import { sessionCookieOptions } from '../modules/auth/auth.service.js';
+import { DEMO_TRIP_ID } from '../modules/demo/demo.service.js';
 
 type MemberPayload = { id: string; userId: string; nickname: string; displayName: string; role: string; status: string };
 type TripPayload = { id: string; title: string; budget: string; version: number; members: MemberPayload[]; stops: { id: string; day: number; orderIndex: number; estimatedCost: string }[] };
@@ -174,6 +175,16 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
     assert.equal(session.userId, userA.id);
     assert.ok(Math.abs(session.expiresAt.getTime() - Date.now() - 30 * 86_400_000) < 60_000);
     assert.match(result.response.headers.get('set-cookie')!, /Max-Age=2592000/);
+  });
+
+  await t.test('authenticated users cannot delete the demo trip', async () => {
+    const path = `/api/trips/${DEMO_TRIP_ID}`;
+    const result = await api(path, { method: 'DELETE', cookie: cookieA });
+    assert.equal(result.response.status, 403);
+    assert.deepEqual(result.body, { error: 'Không thể xóa lịch trình mẫu.' });
+    const demo = await api<TripPayload>(path);
+    assert.equal(demo.response.status, 200);
+    assert.equal(demo.body.stops.length, 9);
   });
 
   await t.test('A creates a trip and OWNER membership atomically; BigInt serializes as string', async () => {
@@ -491,6 +502,57 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
     assert.equal((await api(`/api/trips/${trip.body.id}/stops`, { method: 'POST', cookie: cookieC, body })).response.status, 403);
     assert.equal((await api(`/api/trips/${trip.body.id}/stops`, { method: 'POST', cookie: cookieA, body: { ...body, day: 4 } })).response.status, 400);
     assert.equal((await api(`/api/trips/${mainTrip.id}/stops/${first.body.id}`, { method: 'PATCH', cookie: cookieA, body: { day: 1, version: 2 } })).response.status, 404);
+  });
+
+  await t.test('deleting a trip requires a session', async () => {
+    const result = await api(`/api/trips/${mainTrip.id}`, { method: 'DELETE' });
+    assert.equal(result.response.status, 401);
+    assert.equal(await prisma.trip.count({ where: { id: mainTrip.id } }), 1);
+  });
+
+  await t.test('an active MEMBER cannot delete a trip', async () => {
+    const tripId = sharedWithExistingB.id;
+    const result = await api(`/api/trips/${tripId}`, { method: 'DELETE', cookie: cookieB });
+    assert.equal(result.response.status, 403);
+    assert.equal((await api(`/api/trips/${tripId}`, { cookie: cookieB })).response.status, 200);
+  });
+
+  await t.test('OWNER permanently deletes one trip and all attached data', async () => {
+    const { body: trip } = await newTrip(cookieA, 'delete', 'create-to-delete');
+    const tripId = trip.id;
+    const path = `/api/trips/${tripId}`;
+    const ownerId = trip.members[0]!.id;
+    const pendingInvite = await invite(cookieA, tripId);
+    const { inviteToken } = await invite(cookieA, tripId);
+    const joined = await api<JoinPayload>(`/api/invites/${inviteToken}/join`, { method: 'POST', cookie: cookieB, body: { displayName: userB.displayName } });
+    assert.equal(joined.response.status, 200);
+    const stop = await prisma.stop.create({ data: { tripId, name: 'Khâu Vai', day: 1, orderIndex: 1 } });
+    await prisma.stop.create({ data: { tripId, name: 'Điểm đã xóa mềm', deletedAt: new Date() } });
+    await prisma.expense.create({ data: { tripId, stopId: stop.id, payerMemberId: ownerId, amount: 100_000n, title: 'Ăn trưa', idempotencyKey: 'trip-delete-expense' } });
+    await prisma.settlementTransfer.create({ data: { tripId, fromMemberId: joined.body.memberId, toMemberId: ownerId, amount: 25_000n, idempotencyKey: 'trip-delete-transfer' } });
+    const category = await prisma.packingCategory.create({ data: { memberId: ownerId, name: 'Áo ấm', nameKey: 'áo ấm' } });
+    await prisma.packingItem.create({ data: { tripId, title: 'Áo khoác', assignedToMemberId: ownerId, categoryId: category.id } });
+    assert.equal(await prisma.idempotencyRecord.count({ where: { tripId } }), 1);
+
+    const results = await Promise.all(Array.from({ length: 2 }, () => api(path, { method: 'DELETE', cookie: cookieA })));
+    assert.deepEqual(results.map(({ response }) => response.status).sort(), [200, 403]);
+    assert.deepEqual(results.find(({ response }) => response.ok)?.body, { success: true, deletedTripId: tripId });
+    assert.equal(await prisma.trip.count({ where: { id: tripId } }), 0);
+    assert.equal(await prisma.tripMember.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.stop.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.expense.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.settlementTransfer.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.packingItem.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.packingCategory.count({ where: { id: category.id } }), 0);
+    assert.equal(await prisma.tripInvite.count({ where: { tripId } }), 0);
+    assert.equal(await prisma.idempotencyRecord.count({ where: { tripId } }), 0);
+    assert.equal((await api(`/api/invites/${pendingInvite.inviteToken}`)).body.valid, false);
+    for (const cookie of [cookieA, cookieB]) {
+      const me = await api<MePayload>('/api/auth/me', { cookie });
+      assert.equal(me.response.status, 200);
+      assert.ok(me.body.trips.some(({ id }) => id === mainTrip.id || id === sharedWithExistingB.id));
+      assert.ok(!me.body.trips.some(({ id }) => id === tripId));
+    }
   });
 
   await t.test('logout revokes the DB session and clears the cookie; old tokens stop working', async () => {
