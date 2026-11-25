@@ -1,7 +1,7 @@
 import type { Prisma, TripInvite, User } from '@prisma/client';
 import { prisma } from '../../config/database.js';
 import { env } from '../../config/env.js';
-import { generateRandomToken, hashToken } from '../../utils/crypto.js';
+import { generateInviteCode, hashToken, normalizeInviteToken } from '../../utils/crypto.js';
 import { inTransaction } from '../../utils/transaction.js';
 import { HttpError, INVALID_INVITE, TRIP_ACCESS_DENIED } from '../../utils/httpError.js';
 import { createSession } from '../auth/auth.service.js';
@@ -27,16 +27,25 @@ export async function issueInvite(tripId: string, userId: string) {
     if (await tx.tripMember.count({ where: { tripId, status: 'ACTIVE' } }) >= 2) {
       throw new HttpError(409, 'Chuyến đi đã có đủ hai người đồng hành.');
     }
-    const inviteToken = generateRandomToken();
-    const invite = await tx.tripInvite.create({ data: { tripId, createdByUserId: userId, tokenHash: hashToken(inviteToken), expiresAt: new Date(Date.now() + 48 * 60 * 60_000) } });
     const clientUrl = env.CLIENT_URL.replace(/\/$/, '');
-    return { inviteToken, inviteUrl: `${clientUrl}/join/${inviteToken}`, expiresAt: invite.expiresAt };
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60_000);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const inviteCode = generateInviteCode(6);
+      // A conflicting hash must not abort the transaction or reuse another invitation.
+      const { count } = await tx.tripInvite.createMany({
+        data: { tripId, createdByUserId: userId, tokenHash: hashToken(inviteCode), expiresAt },
+        skipDuplicates: true,
+      });
+      if (count === 1) return { inviteCode, inviteToken: inviteCode, inviteUrl: `${clientUrl}/join/${inviteCode}`, expiresAt };
+    }
+    throw new HttpError(503, 'Chưa tạo được mã mời. Vui lòng thử lại.');
   });
 }
 
 export async function previewInvite(token: string) {
-  if (!/^[a-f0-9]{64}$/i.test(token)) return { valid: false as const, message: INVALID_INVITE };
-  const invite = await prisma.tripInvite.findUnique({ where: { tokenHash: hashToken(token) }, include: { trip: true, createdByUser: true } });
+  const normalized = normalizeInviteToken(token);
+  if (!normalized) return { valid: false as const, message: INVALID_INVITE };
+  const invite = await prisma.tripInvite.findUnique({ where: { tokenHash: hashToken(normalized) }, include: { trip: true, createdByUser: true } });
   if (!isValid(invite, new Date())) return { valid: false as const, message: INVALID_INVITE };
   const owner = await prisma.tripMember.findUnique({ where: { tripId_userId: { tripId: invite.tripId, userId: invite.createdByUserId } } });
   if (owner?.status !== 'ACTIVE' || owner.role !== 'OWNER') return { valid: false as const, message: INVALID_INVITE };
@@ -44,8 +53,9 @@ export async function previewInvite(token: string) {
 }
 
 export async function joinInvite(token: string, displayName: string, currentUser: User | null) {
-  if (!/^[a-f0-9]{64}$/i.test(token)) throw new HttpError(400, INVALID_INVITE);
-  const tokenHash = hashToken(token);
+  const normalized = normalizeInviteToken(token);
+  if (!normalized) throw new HttpError(400, INVALID_INVITE);
+  const tokenHash = hashToken(normalized);
   return inTransaction(async (tx) => {
     const candidate = await tx.tripInvite.findUnique({ where: { tokenHash } });
     if (!candidate) throw new HttpError(400, INVALID_INVITE);

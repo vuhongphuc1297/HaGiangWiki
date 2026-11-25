@@ -12,14 +12,14 @@ import { errorHandler } from '../middlewares/errorHandler.js';
 import { idempotency } from '../middlewares/idempotency.middleware.js';
 import { tripAccess } from '../middlewares/tripAccess.middleware.js';
 import { bigintJsonReplacer } from '../utils/bigint.js';
-import { generateRandomToken, hashToken } from '../utils/crypto.js';
+import { generateInviteCode, generateRandomToken, hashToken } from '../utils/crypto.js';
 import { HttpError } from '../utils/httpError.js';
 import { sessionCookieOptions } from '../modules/auth/auth.service.js';
 
 type MemberPayload = { id: string; userId: string; nickname: string; displayName: string; role: string; status: string };
 type TripPayload = { id: string; title: string; budget: string; version: number; members: MemberPayload[]; stops: { id: string; day: number; orderIndex: number; estimatedCost: string }[] };
 type UserPayload = { id: string; displayName: string };
-type InvitePayload = { inviteToken: string; inviteUrl: string; expiresAt: string };
+type InvitePayload = { inviteCode: string; inviteToken: string; inviteUrl: string; expiresAt: string };
 type JoinPayload = { success: boolean; tripId: string; memberId: string };
 type MePayload = { user: UserPayload; trips: { id: string; budget: string; membership: { role: string } }[] };
 type ApiOptions = { method?: string; cookie?: string; key?: string; body?: unknown; raw?: string };
@@ -241,21 +241,26 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
     assert.equal((await api(`/api/trips/${mainTrip.id}`)).response.status, 401);
   });
 
-  await t.test('OWNER issues a hashed 48-hour invite; public preview exposes only summary fields', async () => {
+  await t.test('OWNER issues a hashed six-character invite and either case previews the 48-hour invitation', async () => {
     mainInvite = await invite(cookieA, mainTrip.id);
-    assert.match(mainInvite.inviteToken, /^[a-f0-9]{64}$/);
-    assert.ok(mainInvite.inviteUrl.endsWith(`/join/${mainInvite.inviteToken}`));
-    const stored = await prisma.tripInvite.findUniqueOrThrow({ where: { tokenHash: hashToken(mainInvite.inviteToken) } });
-    assert.notEqual(stored.tokenHash, mainInvite.inviteToken);
+    assert.match(mainInvite.inviteCode, /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/);
+    assert.equal(mainInvite.inviteToken, mainInvite.inviteCode);
+    assert.equal(new URL(mainInvite.inviteUrl).pathname, `/join/${mainInvite.inviteCode}`);
+    const stored = await prisma.tripInvite.findUniqueOrThrow({ where: { tokenHash: hashToken(mainInvite.inviteCode) } });
+    assert.notEqual(stored.tokenHash, mainInvite.inviteCode);
+    assert.equal(stored.expiresAt.toISOString(), mainInvite.expiresAt);
     assert.ok(Math.abs(stored.expiresAt.getTime() - Date.now() - 48 * 3_600_000) < 60_000);
-    const preview = await api(`/api/invites/${mainInvite.inviteToken}`);
-    assert.equal(preview.response.status, 200);
-    assert.deepEqual(preview.body, { valid: true, tripTitle: mainTrip.title, ownerName: userA.displayName, durationDays: 3 });
-    assert.equal(preview.response.headers.get('Cache-Control'), 'no-store');
+    for (const token of [mainInvite.inviteCode, ` ${mainInvite.inviteCode.toLowerCase()} `]) {
+      const preview = await api(`/api/invites/${encodeURIComponent(token)}`);
+      assert.equal(preview.response.status, 200);
+      assert.deepEqual(preview.body, { valid: true, tripTitle: mainTrip.title, ownerName: userA.displayName, durationDays: 3 });
+      assert.equal(preview.response.headers.get('Cache-Control'), 'no-store');
+    }
   });
 
-  await t.test('anonymous B joins once and receives a session after the transaction commits', async () => {
-    const result = await api<JoinPayload>(`/api/invites/${mainInvite.inviteToken}/join`, { method: 'POST', body: { displayName: `${prefix}-B` } });
+  await t.test('anonymous B joins with a lowercase invite code and receives a session after commit', async () => {
+    const input = encodeURIComponent(` ${mainInvite.inviteCode.toLowerCase()} `);
+    const result = await api<JoinPayload>(`/api/invites/${input}/join`, { method: 'POST', body: { displayName: `${prefix}-B` } });
     assert.equal(result.response.status, 200);
     assert.equal(result.body.success, true);
     joinedB = result.body;
@@ -277,6 +282,23 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
     assert.equal(detail.body.members.length, 2);
     const me = await api<MePayload>('/api/auth/me', { cookie: cookieB });
     assert.ok(me.body.trips.some((trip) => trip.id === mainTrip.id && trip.membership.role === 'MEMBER'));
+  });
+
+  await t.test('legacy invitations still preview and join against their existing lowercase token hashes', async () => {
+    const { body: trip } = await newTrip(cookieA, 'legacy-invite');
+    const token = generateRandomToken();
+    await prisma.tripInvite.create({ data: {
+      tripId: trip.id, createdByUserId: userA.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + 48 * 3_600_000),
+    } });
+    const input = encodeURIComponent(` ${token.toUpperCase()} `);
+    const preview = await api(`/api/invites/${input}`);
+    assert.equal(preview.response.status, 200);
+    assert.equal(preview.body.valid, true);
+    assert.equal(preview.body.tripTitle, trip.title);
+    const joined = await api<JoinPayload>(`/api/invites/${input}/join`, { method: 'POST', cookie: cookieC, body: { displayName: `${prefix}-C` } });
+    assert.equal(joined.response.status, 200);
+    assert.equal(joined.body.tripId, trip.id);
+    assert.equal((await api(`/api/invites/${token}`)).body.valid, false);
   });
 
   await t.test('a used invite rejects both authenticated and anonymous reuse without new users', async () => {
@@ -340,7 +362,7 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
     const revoked = await invite(cookieA, trip.body.id);
     await prisma.tripInvite.update({ where: { tokenHash: hashToken(expired.inviteToken) }, data: { expiresAt: new Date(Date.now() - 1000) } });
     await prisma.tripInvite.update({ where: { tokenHash: hashToken(revoked.inviteToken) }, data: { revokedAt: new Date() } });
-    for (const token of [expired.inviteToken, revoked.inviteToken, generateRandomToken(), 'invalid-token']) {
+    for (const token of [expired.inviteToken, revoked.inviteToken, generateRandomToken(), 'invalid-token', 'O123IL', 'HG894', 'HG89422']) {
       assert.equal((await api(`/api/invites/${token}`)).body.valid, false);
       assert.equal((await api(`/api/invites/${token}/join`, { method: 'POST', body: { displayName: `${prefix}-invalid` } })).response.status, 400);
     }
@@ -484,6 +506,8 @@ test('HaGiangWiki auth, authorization, invitations and idempotency end-to-end', 
   });
 
   await t.test('token utilities and production cookie flags match the security contract', () => {
+    assert.match(generateInviteCode(), /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/);
+    assert.match(generateInviteCode(10), /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{10}$/);
     const first = generateRandomToken();
     assert.notEqual(first, generateRandomToken());
     assert.equal(generateRandomToken(16).length, 32);
