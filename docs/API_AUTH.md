@@ -25,14 +25,15 @@ npm run build
 | POST | `/api/trips` | Cần session; tạo Trip + thành viên OWNER trong một transaction; trả 201 thông tin Trip kèm `members` |
 | GET | `/api/trips/:tripId` | Cần session và thành viên ACTIVE; trả thông tin Trip, `members` và `stops` chưa xóa mềm |
 | PATCH | `/api/trips/:tripId` | OWNER đang ACTIVE; kiểm tra version; giảm ngày chuyển điểm vượt thời lượng về kho tạm; trả thêm `movedStopsCount` |
+| DELETE | `/api/trips/:tripId` | OWNER đang ACTIVE; xóa chuyến đi và cascade toàn bộ stops, expenses, packingItems, invites; trả `{ success: true }`; chặn xóa demo trip |
 | GET | `/api/trips/demo_trip_hagiang_20261120` | Ngoại lệ công khai chỉ cho đúng chuyến seed; trả `readOnly: true`, không trả userId hoặc thông tin phiên |
 | POST | `/api/trips/:tripId/stops` | Thành viên ACTIVE; thêm địa điểm, trả 201; hỗ trợ Idempotency-Key |
 | PATCH | `/api/trips/:tripId/stops/reorder` | Thành viên ACTIVE; body `{ day, stopIds }` chứa đầy đủ điểm chưa xóa trong ngày; khóa và sắp xếp trong transaction |
 | PATCH | `/api/trips/:tripId/stops/:stopId` | Thành viên ACTIVE; sửa thông tin hoặc chuyển ngày, bắt buộc `version`; hỗ trợ Idempotency-Key |
 | DELETE | `/api/trips/:tripId/stops/:stopId` | Thành viên ACTIVE; `version` ở body hoặc query; xóa mềm và dồn thứ tự cùng ngày |
-| POST | `/api/trips/:tripId/invites` | Chỉ OWNER đang ACTIVE; trả 201 `{ inviteToken, inviteUrl, expiresAt }` |
-| GET | `/api/invites/:token` | Công khai; trả preview `{ valid, tripTitle, ownerName, durationDays }` hoặc `{ valid: false, message }` |
-| POST | `/api/invites/:token/join` | Body `{ "displayName": "Linh" }`; dùng session hợp lệ hiện có hoặc tạo User + Session; trả `{ success: true, tripId, memberId }` |
+| POST | `/api/trips/:tripId/invites` | Chỉ OWNER đang ACTIVE; trả 201 `{ inviteToken, inviteCode, inviteUrl, expiresAt }` (mã code 6 ký tự dễ đọc/gõ) |
+| GET | `/api/invites/:token` | Công khai; nhận token 64 ký tự hex hoặc inviteCode 6 ký tự; trả preview `{ valid, tripTitle, ownerName, durationDays }` hoặc `{ valid: false, message }` |
+| POST | `/api/invites/:token/join` | Body `{ "displayName": "Linh" }`; nhận token 64 ký tự hoặc code 6 ký tự; dùng session hợp lệ hiện có hoặc tạo User + Session; trả `{ success: true, tripId, memberId }` |
 
 Danh sách thành viên trả `id`, `userId`, `nickname`, `displayName`, `role`, `status` và các mốc tham gia/thu hồi. Không trả session hoặc token hash. `stops` sắp xếp theo `day`, `orderIndex`, rồi `id` để thứ tự ổn định.
 

@@ -65,7 +65,9 @@ Typecheck/build toàn dự án và 64 kiểm tra hồi quy (auth 30, stops 25, s
 
 ## Cấu trúc và thiết kế
 
-- React Router quản lý `/`, `/onboarding`, `/join/:token`; URL không tồn tại chuyển về trang chủ. Các tab phụ dùng query `?tab=map|expenses|packing` và hỗ trợ Back của trình duyệt.
+- React Router quản lý `/`, `/trip`, `/demo`, `/onboarding`, `/join/:token`; URL không tồn tại chuyển về trang chủ. Các tab phụ dùng query `?tab=map|expenses|packing` và hỗ trợ Back của trình duyệt.
+- **Trang chủ giới thiệu (Landing Page - Bước 4.3):** Khi người dùng chưa có chuyến đi hoạt động hoặc là khách vãng lai, `/` hiển thị `LandingPage` với 3 lối vào rõ ràng: Tạo chuyến đi mới (`/onboarding`), Nhập mã/link mời 6 ký tự, và Khám phá lịch trình mẫu (`/demo`). Nếu đã có chuyến đi trong máy, trang chủ có thẻ dẫn nhanh vào `/trip`.
+- **Xóa chuyến đi (Bước 4.3):** Trong `SettingsModal`, OWNER có nút nguy hiểm màu đỏ "Xóa chuyến đi này", mở hộp thoại xác nhận trước khi gọi `DELETE /api/trips/:tripId` để xóa vĩnh viễn và điều hướng về chuyến tiếp theo hoặc `/`.
 - `services/api.ts` thêm `/api`, gửi `credentials: 'include'`, đọc lỗi JSON, timeout 15 giây và hỗ trợ AbortSignal. Vite proxy `/api` sang cổng 5000.
 - `context/TripContext.tsx` tải phiên/chuyến, chọn mẫu khi phù hợp, cập nhật từ PATCH, gộp refresh nền và tránh response cũ ghi đè dữ liệu mới. `returnSync.ts` quản lý sự kiện quay lại ứng dụng và có unit test độc lập.
 - `components/layout/` chứa khung tối đa 420px, TopBar và BottomNav 76px có safe area. `components/ui/` chứa Button, Feedback và Sheet dùng native dialog để giữ focus, Escape và hoàn trả focus.

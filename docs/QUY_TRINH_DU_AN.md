@@ -2,9 +2,9 @@
 
 > Kế hoạch xây dựng ứng dụng lập lịch trình, bản đồ và quản lý chi tiêu du lịch dành cho hai người.
 
-- **Ngày cập nhật:** 18/11/2026.
+- **Ngày cập nhật:** 27/11/2026.
 - **Thư mục dự án:** `D:\Dev\HaGiangWiki`.
-- **Trạng thái:** đã hoàn thiện nền móng dữ liệu/xác thực (Tuần 1), lịch trình dùng chung đến Bước 2.4 (M1) và chi tiêu, quyết toán hai người, hành trang cá nhân riêng tư đến Bước 3.3 (M2); đã qua nghiệm thu mô phỏng hai phiên trình duyệt độc lập với 108/108 kiểm thử tự động, còn kiểm tra trên hai điện thoại thật và môi trường triển khai.
+- **Trạng thái:** đã hoàn thiện Tuần 1–4 và Bước 4.3 (mở rộng danh mục hành trang cá nhân, Landing Page `/`, mã mời 6 ký tự, xóa vĩnh viễn chuyến đi, tách biệt định danh 2 user) và triển khai bản thử nghiệm lên Cloudflare Pages (`pages.dev`) + Render + Neon; đạt **136/136 kiểm thử tự động** (`typecheck` và `build` frontend đạt), sẵn sàng bước vào Tuần 5 (Ngoại tuyến và đồng bộ an toàn) và nghiệm thu trên hai điện thoại thật.
 - **Khung thời gian tham khảo:** 6 tuần cho 1 lập trình viên làm toàn thời gian.
 - **Cách sử dụng:** thực hiện theo thứ tự phụ thuộc; chỉ đánh dấu hoàn thành khi đạt tiêu chí nghiệm thu, không chỉ khi đã viết xong giao diện.
 
@@ -137,15 +137,45 @@ flowchart TD
 
 **Công việc**
 
-- [ ] Làm một bản đồ địa lý với ghim điểm dừng, lọc theo ngày và chọn điểm trên danh sách/bản đồ.
-- [ ] Tạo chuyển đổi Bản đồ/Danh sách phù hợp điện thoại.
-- [ ] Nhập hoặc chọn GPS thực; hiển thị rõ địa điểm chưa có tọa độ.
-- [ ] Tích hợp ước tính quãng đường/thời gian giữa các điểm, theo cấu hình phương tiện phù hợp.
-- [ ] Tích hợp thời tiết hiện tại hoặc dự báo ngày đến khi nguồn dữ liệu hỗ trợ.
-- [ ] Hiển thị nguồn, thời điểm dữ liệu và trạng thái không có dự báo cho ngày được chọn.
-- [ ] Thêm cache có thời hạn, timeout, giới hạn gọi lại và phương án khi API lỗi.
+- [x] Làm một bản đồ địa lý với ghim điểm dừng, lọc theo ngày và chọn điểm trên danh sách/bản đồ.
+- [x] Tạo chuyển đổi Bản đồ/Danh sách phù hợp điện thoại.
+- [x] Nhập hoặc chọn GPS thực; hiển thị rõ địa điểm chưa có tọa độ.
+- [x] Tích hợp ước tính quãng đường/thời gian giữa các điểm, theo cấu hình phương tiện phù hợp.
+- [x] Tích hợp thời tiết hiện tại hoặc dự báo ngày đến khi nguồn dữ liệu hỗ trợ.
+- [x] Hiển thị nguồn, thời điểm dữ liệu và trạng thái không có dự báo cho ngày được chọn.
+- [x] Thêm cache có thời hạn, timeout, giới hạn gọi lại và phương án khi API lỗi.
 
 **Nghiệm thu:** ghim khớp địa điểm; không dùng tọa độ giả cho điểm còn thiếu GPS; phân biệt dữ liệu thời tiết hiện tại với dự báo; lỗi dịch vụ ngoài không chặn lập lịch và ghi tiền.
+
+### Bước 4.3 — Cửa ngõ ứng dụng, mã mời ngắn gọn và vòng đời chuyến đi
+
+> Bước hoàn thiện trải nghiệm thực tế sau khi triển khai thử nghiệm trên `pages.dev`. Giải quyết triệt để sự nhập nhằng về luồng User mới, cơ chế tham gia 2 người và quản trị chuyến đi trước khi bước vào Tuần 5.
+
+**Công việc**
+
+- [x] **Trang chủ giới thiệu (Landing Page) tại `/`:**
+  - Thay vì tự động mở cứng lịch trình mẫu (`demo_trip_hagiang_20261120`), người dùng chưa có chuyến hoặc khách vãng lai sẽ được chào đón tại Trang chủ giới thiệu phong cách Editorial/Minimalist.
+  - Giới thiệu định vị sản phẩm: Sổ tay hành trình Hà Giang dành riêng cho 2 người.
+  - 3 lối vào rõ ràng (Call-To-Action):
+    1. **Tạo chuyến đi mới:** Dẫn vào form khởi tạo chuyến đi riêng (Tên bạn, Tên chuyến, Ngày đi, Ngân sách).
+    2. **Tham gia chuyến đi:** Ô nhập mã mời (hỗ trợ mã 6 ký tự hoặc dán toàn bộ link mời).
+    3. **Khám phá lịch trình mẫu (3N2Đ):** Mở xem tham khảo bản demo tại `/demo` với banner hướng dẫn rõ ràng.
+  - Nếu đã có chuyến đi trong máy, trang chủ có thẻ "Tiếp tục chuyến đi: …" dẫn vào `/trip` giúp vào nhanh mà không bị lạc hướng.
+- [x] **Hệ thống mã mời 6 ký tự (Invite Code) kết hợp liên kết một chạm:**
+  - Bổ sung cơ chế sinh mã mời 6 ký tự chữ hoa & số (`generateInviteCode(6)`, loại trừ các ký tự dễ nhầm lẫn như `0/O`, `1/I/L`), vẫn tương thích ngược token hex 64 ký tự cũ.
+  - Đường link chia sẻ rút gọn: `<CLIENT_URL>/join/<inviteCode>` (triển khai trên `https://hagiangwiki.pages.dev/join/<inviteCode>`).
+  - Hỗ trợ cả 2 cách tham gia: Bấm link trực tiếp (tự động điền mã) hoặc nhập mã code thủ công trên ô ở Trang chủ.
+  - Kiểm tra tính hợp lệ, thời hạn 48 giờ và giới hạn tối đa 2 người đồng hành.
+- [x] **Chức năng Xóa chuyến đi (Delete Trip Lifecycle):**
+  - Backend: Endpoint `DELETE /api/trips/:tripId` yêu cầu xác thực và chỉ cho phép `OWNER` đang `ACTIVE`.
+  - Thực hiện xóa cascade toàn bộ điểm dừng, chi tiêu, chuyển trả, hành lý và mã mời của chuyến đi. Tuyệt đối chặn xóa chuyến mẫu (`protectDemoFromDeletion`).
+  - Frontend: Thêm nút **Xóa chuyến đi này** màu đỏ trong Cài đặt chuyến đi (`SettingsModal`), kèm hộp thoại xác nhận cảnh báo mất dữ liệu.
+  - Sau khi xóa: Tự động chuyển sang chuyến đi tiếp theo (nếu có nhiều chuyến) hoặc quay về Trang chủ giới thiệu.
+- [x] **Tách biệt và tường minh hóa định danh 2 User:**
+  - Giao diện thể hiện rõ danh tính hiện tại của phiên làm việc (`SettingsModal`, `OnboardingPage`, `JoinTripPage`).
+  - Khách vãng lai và người dùng thứ 2 khi tự truy cập độc lập không bị dính vào trạng thái hay chuyến đi của người dùng thứ 1 (tách khóa `localStorage` theo `userId`, tách `/demo` với `DemoTripProvider`).
+
+**Nghiệm thu:** Đã hoàn thành mã nguồn và hợp nhất PR #6–#9 vào `dev`, kiểm tra tự động đạt 136/136 test; còn nghiệm thu thao tác hai người thực địa trên hai điện thoại thật.
 
 ### Tuần 5 — Ngoại tuyến và đồng bộ an toàn
 
@@ -211,7 +241,8 @@ Một hạng mục chỉ hoàn thành khi dữ liệu được lưu đúng, quy�
 | Tuần 1 | Đã có nền móng cục bộ; còn nghiệm thu triển khai | Prisma/PostgreSQL, session, lời mời, quyền và kiểm thử HTTP; hướng dẫn tại DATABASE.md, FRONTEND.md. |
 | Tuần 2 / M1 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 2.1–2.4; CRUD/xếp lịch, co ngày không mất dữ liệu, OWNER/MEMBER, 409, refresh, danh sách thành viên và mời từ TopBar; 64 test pass và ảnh nghiệm thu cục bộ. |
 | Tuần 3 / M2 | Đạt mô phỏng hai phiên; chờ hai điện thoại thật | Bước 3.1–3.3; Expense/Settlement BigInt, 3 kiểu chia, chuyển trả, hành trang cá nhân riêng tư (bỏ đồ chung theo quyết định chủ dự án); 108 test pass và ảnh nghiệm thu cục bộ. |
-| Tuần 4 | Chưa bắt đầu | Bản đồ/thời tiết hoạt động và có phương án khi lỗi. |
+| Tuần 4 | Đã hoàn thành bản đồ & thời tiết | Tuyến đường OSRM, bản đồ Leaflet, Open-Meteo, proxy Cloudflare Functions; 12 test `external-flow` đạt. |
+| Bước 4.3 | Đã hoàn thành mã nguồn & deploy thử (PR #6–#9) | Danh mục hành trang cá nhân, Landing Page `/`, mã mời 6 ký tự, xóa chuyến đi, tách định danh 2 user; 136/136 test đạt (auth 35, stops 25, sync 9, expenses 17, expense-ui 3, packing 17, packing-ui 15, external 12, landing 3). |
 | Tuần 5 | Chưa bắt đầu | Kết quả thử ngoại tuyến, gửi lại và xung đột. |
 | Tuần 6 / M3 | Chưa bắt đầu | Kết quả nghiệm thu trọn luồng và bản phát hành. |
 
